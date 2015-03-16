@@ -1,0 +1,7 @@
+doc/proposal/*.log
+doc/proposal/*.aux
+doc/proposal/*.bbl
+doc/proposal/*.blg
+doc/proposal/*.out
+doc/proposal/*.pdf
+doc/proposal/*.sh
