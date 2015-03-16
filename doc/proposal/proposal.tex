@@ -24,7 +24,7 @@ Basically, the goal of the project is to visualize data concerning football tran
 \begin{itemize}
 	\item \textbf{Visualization of the football transfer graph.} Using data from \url{www.soccerbase.com} the goal is to construct a graph of player transfers between clubs. Intuitively, the graph is a directed graph, where the nodes are the teams and the edges have the players and the transfer fees as attributes. Our visualization idea builds up upon the graph from \url{www.transferwindow.info}. Initially, the graph is visualized in a geographical world map. The user then can click on a league/team/player to show only transfers of the league/team/player. Also, clicking on one of those three would provide additional statistics. Furthermore, an extended filter can be applied, e.g to show only transfers of players which are under 21, or players which are from Spain.
 	
-	\item \textbf{Analysis and visualization of team/player statistics from the football transfer graph.} The transfer graph can be used to analyze certain behaviors of players and teams using graph analysis algorithms. For example, depth search can be used to find players which left a team and then came back after some years. Or, using the \emph{PageRank} algorithm\footnote{\url{http://en.wikipedia.org/wiki/PageRank}}, teams can be found which are of high importance when it comes to transfers.
+	\item \textbf{Analysis and visualization of team/player statistics from the football transfer graph.} The transfer graph can be used to analyze certain behaviors of players and teams using graph analysis algorithms. For example, depth search can be used to find players which left a team and then came back after some years. Or, using the \emph{PageRank} algorithm\footnote{\url{http://en.wikipedia.org/wiki/PageRank}}, teams can be found which are of high importance when it comes to transfers. \cite{brath} give an overview of graph algorithms, that are also interesting for this project.
 	
 	\item \textbf{Calculation of popularity of teams using twitter.} Each football team has an official twitter account where they post news, events, etc. When clicking on a team in the football transfer graph, statistics of their twitter account would be presented, including the number of followers. Unfortunately, the number of followers doesn't reflect the true number of fans. \cite{Ramasamy:2013:IUI:2512938.2512960} propose a method to identify user interests from tweet times, which are compared to the tweet times of events concerning the team. This algorithm can therefore identify true fans.
 	
@@ -35,7 +35,6 @@ Basically, the goal of the project is to visualize data concerning football tran
 Obtaining the data for the transfer graph requires scraping, which shouldn't be a big problem. When the needed data is obtained, visualizing and analyzing the transfer graph is straightforward. On the other hand, twitter data is bound to a language. So, we will at first only take a look at English clubs. Also, machine learning methods for classification and prediction cannot be perfect, so that mistakes are expected. 
 
 \subsection{How is it done today, and what are the limits of current practice?}
-
 There exists a transfer visualization, but its visualization can be made more intuitive.
 Also, the analyses have not been performed yet on soccer data (to our knowledge).
 
@@ -47,23 +46,18 @@ Football fans will have a whole new level of investigating football transfers, i
 
 \subsection{If you're successful, what difference will it make? What impact will success have? How will it be measured?}
 \label{sec:difference_impact}
-
 The payoff would be interesting insights into transfer behavior of football players and teams and Twitter usage of fans. 
 
 \subsection{What are the risks and the payoffs?}
-
 There are no risks. The payoff will be a visualization where interested fans and researchers can visualize teams and player transfer patterns, as well as how fans behave. 
 
 \subsection{How much will it cost?}
-
 Nothing in the first year since it can be hosted by using AWS (Amazon Web Services) Free Tier.
 
 \subsection{How long will it take?}
-
 The project is quite involved. This section contains estimates for the tasks. They will change as we gain experience with the subject and the tools we use.
 
 \subsubsection{Visualization of the football transfer graph}
-
 Subtasks:
 \begin{enumerate}
 \item Create database model: 2 hours
@@ -71,17 +65,16 @@ Subtasks:
 \item Scrape \url{www.soccerbase.com}: 2 hours
 \item Set up hosting environment for visualization: 2 hours
 \item Create backend to access the database: 2 hours
-\item Get to know the D3 framework: 5 hours
+\item Get to know the D3\footnote{\url{http://d3js.org/}} framework: 5 hours
 \item Create the visualization: 8 hours
 \item Test the visualization: 3 hours
 \end{enumerate}
 
 \subsubsection{Analysis and visualization of team/player statistics from the football transfer graph}
-
 \begin{itemize}
 \item \textbf{Depth search.} The Depth Search graph algorithm is a well-known graph algorithm and should not pose significant implementation challenges. There is a caveat though: the transfer data is stored in an SQL database, which would make using recursive algorithms inefficient. There a two approaches to solve this problem:
 	\begin{itemize}
-	\item \textit{Analyze the data with the help of a graph database:} Graph databases (for example Neo4J) are optimized for executing queries which traverse graphs. After the results are calculated they can be cached in the MySQL database.
+	\item \textit{Analyze the data with the help of a graph database:} Graph databases (for example Neo4J) are optimized for executing queries which traverse graphs. After the results are calculated they can be cached in the MySQL database. \cite{Cattuto:2013:TSN:2484425.2484442} discuss the use of time-varying social networks in graph databases.
 	\item \textit{Limit analysis to few players at a time.} It can be assumed that no player has a transfer history large enough to prohibit loading it into main memory and analyzing it there.
 	\end{itemize}
 \end{itemize}
