@@ -28,7 +28,7 @@ Basically, the goal of the project is to visualize data concerning football tran
 	
 	\item \textbf{Calculation of popularity of teams using twitter.} Each football team has an official twitter account where they post news, events, etc. When clicking on a team in the football transfer graph, statistics of their twitter account would be presented, including the number of followers. Unfortunately, the number of followers doesn't reflect the true number of fans. \cite{Ramasamy:2013:IUI:2512938.2512960} propose a method to identify user interests from tweet times, which are compared to the tweet times of events concerning the team. This algorithm can therefore identify true fans.
 	
-	\item \textbf{Inclusion and analysis of transfer rumors from different sources.} Using twitter and/or news sites we will include transfer rumors. \cite{Kunneman+12} have used different machine learning methods to predict whether football transfer rumors are going to get completed or not. We can directly use their approach in our project.
+	\item \textbf{Inclusion and analysis of transfer rumors from different sources.} Using twitter and/or news sites we will include transfer rumors. \cite{Kunneman+12} have used different machine learning methods to find tweets that refer to scheduled or unscheduled events like transfer rumors. We can directly use their approach in our project, but for unscheduled events the performance is poor.
 	
 	\item \textbf{Classification and visualization of fan opinions from twitter.} The project will also include user opinions about transfers. \cite{Shrivatava2014} have proposed a model for classifying user tweets as positive, negative or neutral using Support Vector Machines. This model can also be applied to transfer opinions.
 \end{itemize}
@@ -74,7 +74,7 @@ Subtasks:
 \begin{itemize}
 \item \textbf{Depth search.} The Depth Search graph algorithm is a well-known graph algorithm and should not pose significant implementation challenges. There is a caveat though: the transfer data is stored in an SQL database, which would make using recursive algorithms inefficient. There a two approaches to solve this problem:
 	\begin{itemize}
-	\item \textit{Analyze the data with the help of a graph database:} Graph databases (for example Neo4J) are optimized for executing queries which traverse graphs. After the results are calculated they can be cached in the MySQL database. \cite{Cattuto:2013:TSN:2484425.2484442} discuss the use of time-varying social networks in graph databases.
+	\item \textit{Analyze the data with the help of a graph database:} Graph databases (for example Neo4J\footnote{\url{http://neo4j.com/}}) are optimized for executing queries which traverse graphs. After the results are calculated they can be cached in another database. \cite{Cattuto:2013:TSN:2484425.2484442} discuss the use of time-varying social networks in graph databases.
 	\item \textit{Limit analysis to few players at a time.} It can be assumed that no player has a transfer history large enough to prohibit loading it into main memory and analyzing it there.
 	\end{itemize}
 \end{itemize}
@@ -115,6 +115,19 @@ Subtasks:
 \subsection{What are the midterm and final "exams" to check for success? How will progress be measured?}
 
 The first milestone will be the visualization of the transfers alone. This milestone should be accomplished after Easter. It should be possible to also implement the depth search analysis by that date. By the midterm presentation (May 3) two further analysis should be implemented. Finally, all of the above analyses should be implemented or have been rejected.
+
+\section{Survey}
+This section gives an more detailed survey of the single sources of the project. Every group member has chosen at least three sources.
+\subsection{David Kofler}
+
+\subsection{David Westreicher}
+
+\subsection{Matej Stanic}
+\begin{itemize}
+	\item \url{www.soccerbase.com} is a football news site that not only contains news but also many statistics about leagues, teams and players. This includes also a detailed transfer history for every team and player. It's a site where football fans can keep up to date. For our project, detailed transfer information is inevitable in order to build a correct graph of transfers. Soccerbase.com offers exactly that type of transfer data that is needed to build such a graph. By scraping we can directly get the data that we need.
+	\item \cite{Shrivatava2014} have evaluated a method for sentiment analysis for Twitter posts. They implemented a crawler to obtain twitter posts, which then where classified as positive, neutral or negative using a standard Support Vector Machine (SVM). The SVM was evaluated on a predefined dataset using cross validation. The average accuracy of their method was 70.592\%. For our project, the same approach can be used for transfers and/or transfer rumors. After extracting football fan opinions on transfers from Twitter they could be classified as positive, negative or neutral. This would somehow be a measure of acceptance between the fans and the owners and managers of the club. There may be one problem, which is assigning tweets to transfers. This could be solved by only taking into account tweets which are referencing the transfer tweet.
+	\item \cite{Kunneman+12} evaluate methods which identify tweets referring to scheduled or unscheduled events. Their case study consists of two scenarios: The first one are football matches which are scheduled. On the other hand they also used an unscheduled scenario, football transfers. They have tested several state-of-the-art machine learning methods for their scenarios. The results are twofold: For the scheduled event scenario, the accuracy for some methods was above 80\% while for the unscheduled scenario the accuracy was near-baseline. This means that even though the machine learning methods can directly be used for our project, it would not be productive because of the poor performance. 
+\end{itemize}
 
 \bibliographystyle{apalike}
 \bibliography{refs}
