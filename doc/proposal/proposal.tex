@@ -74,7 +74,7 @@ Subtasks:
 \begin{itemize}
 \item \textbf{Depth search.} The Depth Search graph algorithm is a well-known graph algorithm and should not pose significant implementation challenges. There is a caveat though: the transfer data is stored in an SQL database, which would make using recursive algorithms inefficient. There a two approaches to solve this problem:
 	\begin{itemize}
-	\item \textit{Analyze the data with the help of a graph database:} Graph databases (for example Neo4J\footnote{\url{http://neo4j.com/}}) are optimized for executing queries which traverse graphs. After the results are calculated they can be cached in another database. \cite{Cattuto:2013:TSN:2484425.2484442} discuss the use of time-varying social networks in graph databases.
+	\item \textit{Analyze the data with the help of a graph database:} Graph databases (for example Neo4J\footnote{\url{http://neo4j.com/}}) are optimized for executing queries which traverse graphs. After the results are calculated they can be cached in another database.
 	\item \textit{Limit analysis to few players at a time.} It can be assumed that no player has a transfer history large enough to prohibit loading it into main memory and analyzing it there.
 	\end{itemize}
 \end{itemize}
@@ -119,6 +119,14 @@ The first milestone will be the visualization of the transfers alone. This miles
 \section{Survey}
 This section gives an more detailed survey of the single sources of the project. Every group member has chosen at least three sources.
 \subsection{David Kofler}
+
+\begin{itemize}
+	\item \cite{Cattuto:2013:TSN:2484425.2484442} use Neo4J to store data about social interactions which was collected during a conference by using wearable proximity sensors. They present some example queries and discover that querying over densely-connected nodes makes it difficult to achieve high performance. This is something we have to keep in mind when we create our data model.
+
+	\item \cite{Jarukasemratana:2013:CDA:2481492.2481527} contains an interesting algorithm to find communities of clubs between which players often circulate. Many important real-world networks have the scale-free property (we assume that the football transfer network too), but detecting communities within them is not always easy because subcommunities tend to be classified as communities on their own. This paper presents an algorithm specialized for scale-free networks.
+
+	\item \verb+D3.js+ (\url{http://d3js.org}) is a JavaScript framework to create animations on webpages. It is similar in usage to other popular JavaScript libraries (like jQuery and Prototype), but contains special features to create animations. We will use it to create our visualizations.
+\end{itemize}
 
 \subsection{David Westreicher}
 \begin{itemize}
