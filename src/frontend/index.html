@@ -75,6 +75,13 @@
             return countries;
         }
 
+        function findCountry(name){
+            for(var i=0;i<countries.length;i++){
+                if(countries[i].name==name)
+                    return countries[i];
+            }
+        }
+
         function generateTransfers(countries){
             var transfers = [];
             for(var i=0;i<30;i++){
@@ -85,6 +92,7 @@
                 var transfer = [countryA.center,countryB.center];
                 transfers.push(transfer);
             }
+            transfers.push([findCountry('Peru').center,findCountry('India').center])
             return transfers;
         }
 

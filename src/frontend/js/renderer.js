@@ -74,14 +74,39 @@ function midPoint(from,to){
     return [(from[0]+to[0])/2,(from[1]+to[1])/2];
 }
 
+function slerp(from,to,fac){
+    var northpole = new THREE.Vector3(0,1,0);
+    from = from.clone();
+    from.normalize();
+    to = to.clone();
+    to = to.normalize();
+    var quatFrom = new THREE.Quaternion();
+    quatFrom.setFromUnitVectors(northpole,from);
+    var quatTo = new THREE.Quaternion();
+    quatTo.setFromUnitVectors(northpole,to);
+    var slerpedQuat = quatFrom;
+    slerpedQuat.slerp(quatTo,fac);
+    northpole.applyQuaternion(slerpedQuat);
+    return northpole;
+}
+
 function generateTransfers(scene) {
     var transfers = GLOBALDATA.transfers;
     for(var i=0;i<transfers.length;i++){
         var transfer = transfers[i];
         var from = latlongToXYZ(transfer[0]);
-        var mid  = latlongToXYZ(midPoint(transfer[0],transfer[1]),globalScale*2);
         var to = latlongToXYZ(transfer[1]);
-        var curve = new THREE.QuadraticBezierCurve3(from,mid,to);
+        var mid0 = slerp(from,to,0.1);
+        var mid1 = slerp(from,to,0.25);
+        var mid2 = slerp(from,to,0.5);
+        var mid3 = slerp(from,to,0.75);
+        var mid4 = slerp(from,to,0.9);
+        mid0.multiplyScalar(globalScale*1.1);
+        mid1.multiplyScalar(globalScale*1.2);
+        mid2.multiplyScalar(globalScale*1.25);
+        mid3.multiplyScalar(globalScale*1.2);
+        mid4.multiplyScalar(globalScale*1.1);
+        var curve = new THREE.SplineCurve3([from,mid0,mid1,mid2,mid3,mid4,to]);
         var geometry = new THREE.Geometry();
         geometry.vertices = curve.getPoints( 50 );
         var material = new THREE.LineBasicMaterial( { color : 0xff0000 , linewidth:5});
@@ -111,7 +136,7 @@ function init() {
     addToScene(scene);
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
-    renderer.setClearColor( 0xffffff );
+    renderer.setClearColor( 0x333333 );
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     container.appendChild( renderer.domElement );
