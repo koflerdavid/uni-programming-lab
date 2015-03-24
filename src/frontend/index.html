@@ -84,7 +84,8 @@
 
         function generateTransfers(countries){
             var transfers = [];
-            for(var i=0;i<30;i++){
+            var transfernum = 0;
+            for(var i=0;i<transfernum;i++){
                 var countryA = countries[Math.random()*countries.length | 0];
                 var countryB = countries[Math.random()*countries.length | 0];
                 if(countryA==countryB)
@@ -92,7 +93,11 @@
                 var transfer = [countryA.center,countryB.center];
                 transfers.push(transfer);
             }
-            transfers.push([findCountry('Peru').center,findCountry('India').center])
+            var mid = findCountry('Austria').center;
+            for(var i=0;i<countries.length/4;i++){
+                var other = countries[i].center;
+                transfers.push([mid,other]);
+            }
             return transfers;
         }
 
@@ -103,6 +108,7 @@
             transfers:transfers
         }
         </script>
+        <script src="js/shaders.js"></script>
         <script src="js/renderer.js"></script>
     </body>
 </html>

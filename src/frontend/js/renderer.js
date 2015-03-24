@@ -17,9 +17,25 @@ animate();
 
 function generateSphere(){
     var geometry = new THREE.SphereGeometry( globalScale-0.2, 32, 32 );
-    var material = new THREE.MeshBasicMaterial();
-    //material.map = THREE.ImageUtils.loadTexture('img/earth.jpg');
+    var material = new THREE.MeshBasicMaterial(); 
+    material.map = THREE.ImageUtils.loadTexture('img/earth.jpg');
     material.map = THREE.ImageUtils.loadTexture('img/earth.png');
+    material.map = THREE.ImageUtils.loadTexture('img/world.jpg');
+    var sphere = new THREE.Mesh( geometry, material );
+    return sphere;
+}
+
+function generateAtmosphere(){
+    var geometry = new THREE.SphereGeometry( globalScale*1.01, 32, 32 );
+    var shader = Shaders.atmosphere;
+    var uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+    var material = new THREE.ShaderMaterial({
+        uniforms:uniforms,
+        vertexShader:shader.vertexShader,
+        fragmentShader:shader.fragmentShader
+        });
+    material.transparent = true;
+    console.log(shader.fragmentShader);
     var sphere = new THREE.Mesh( geometry, material );
     return sphere;
 }
@@ -101,24 +117,25 @@ function merge(p1,p2){
 
 function generateTransfers(scene) {
     var transfers = GLOBALDATA.transfers;
-    var material = new THREE.LineBasicMaterial( { color : 0xff0000 , linewidth:5});
     for(var i=0;i<transfers.length;i++){
         var transfer = transfers[i];
         var from = latlongToXYZ(transfer[0]);
         var to = latlongToXYZ(transfer[1]);
-        var mid = slerp(from,to,0.5);
-        mid.multiplyScalar(globalScale*1.2);
         var normal = from.clone();
         normal.sub(to);
+        var mid = slerp(from,to,0.5);
+        mid.multiplyScalar(globalScale*(1+(normal.length()/globalScale)/5));
         var anch1 = mid.clone();
         anch1.add(normal.clone().multiplyScalar(0.5));
         var anch2 = mid.clone();
         anch2.add(normal.clone().multiplyScalar(-0.5));
 
         var curve = new THREE.CubicBezierCurve3(from,from,anch1,mid);
-        var curve2 = new THREE.CubicBezierCurve3(to,to,anch2,mid);
+        var curve2 = new THREE.CubicBezierCurve3(mid,anch2,to,to);
         var geometry = new THREE.Geometry();
         geometry.vertices = merge(curve.getPoints( 20 ),curve2.getPoints(20));
+        var material = new THREE.LineBasicMaterial( { color : 0xff0000,linewidth: Math.random()*5 });
+        material.color.setRGB(Math.random(),Math.random(),Math.random());
         var curveObject = new THREE.Line( geometry, material);
         scene.add(curveObject);
     }
@@ -127,6 +144,7 @@ function generateTransfers(scene) {
 function addToScene(scene) {
     scene.add(generateBorders());
     scene.add(generateSphere());
+    scene.add(generateAtmosphere());
     scene.add(generateCenters());
     generateTransfers(scene);
 }
@@ -134,18 +152,17 @@ function addToScene(scene) {
 function init() {
     container = document.getElementById( 'container' );
 
-    camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
-    camera.position.z = 100;
+    camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
+    camera.position.z = globalScale*4;
     controls = new THREE.OrbitControls(camera);
     controls.rotateSpeed = 0.3;
     controls.noPan = true;
 
     scene = new THREE.Scene();
-
     addToScene(scene);
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
-    renderer.setClearColor( 0x333333 );
+    renderer.setClearColor( 0x000000 );
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     container.appendChild( renderer.domElement );
