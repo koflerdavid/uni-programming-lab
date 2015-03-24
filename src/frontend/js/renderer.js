@@ -90,26 +90,35 @@ function slerp(from,to,fac){
     return northpole;
 }
 
+function merge(p1,p2){
+    var all = [];
+    for(var i=0;i<p1.length;i++)
+        all.push(p1[i]);
+    for(var i=0;i<p2.length;i++)
+        all.push(p2[i]);
+    return all;
+}
+
 function generateTransfers(scene) {
     var transfers = GLOBALDATA.transfers;
+    var material = new THREE.LineBasicMaterial( { color : 0xff0000 , linewidth:5});
     for(var i=0;i<transfers.length;i++){
         var transfer = transfers[i];
         var from = latlongToXYZ(transfer[0]);
         var to = latlongToXYZ(transfer[1]);
-        var mid0 = slerp(from,to,0.1);
-        var mid1 = slerp(from,to,0.25);
-        var mid2 = slerp(from,to,0.5);
-        var mid3 = slerp(from,to,0.75);
-        var mid4 = slerp(from,to,0.9);
-        mid0.multiplyScalar(globalScale*1.1);
-        mid1.multiplyScalar(globalScale*1.2);
-        mid2.multiplyScalar(globalScale*1.25);
-        mid3.multiplyScalar(globalScale*1.2);
-        mid4.multiplyScalar(globalScale*1.1);
-        var curve = new THREE.SplineCurve3([from,mid0,mid1,mid2,mid3,mid4,to]);
+        var mid = slerp(from,to,0.5);
+        mid.multiplyScalar(globalScale*1.2);
+        var normal = from.clone();
+        normal.sub(to);
+        var anch1 = mid.clone();
+        anch1.add(normal.clone().multiplyScalar(0.5));
+        var anch2 = mid.clone();
+        anch2.add(normal.clone().multiplyScalar(-0.5));
+
+        var curve = new THREE.CubicBezierCurve3(from,from,anch1,mid);
+        var curve2 = new THREE.CubicBezierCurve3(to,to,anch2,mid);
         var geometry = new THREE.Geometry();
-        geometry.vertices = curve.getPoints( 50 );
-        var material = new THREE.LineBasicMaterial( { color : 0xff0000 , linewidth:5});
+        geometry.vertices = merge(curve.getPoints( 20 ),curve2.getPoints(20));
         var curveObject = new THREE.Line( geometry, material);
         scene.add(curveObject);
     }
