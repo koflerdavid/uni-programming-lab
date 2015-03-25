@@ -48,8 +48,6 @@
                 var center = [0,0];
                 var polygons = [];
                 var polyType = ctr.geometry.type;
-                if(polyType=="MultiPolygon")
-                    console.log(polyType,name,i);
                 var polys = ctr.geometry.coordinates;
                 var vertNum = 0;
                 for(var k=0;k<polys.length;k++){
@@ -81,6 +79,15 @@
                     return countries[i];
             }
         }
+        
+        function generateTransfer(from,to){
+            return {
+                from:from,
+                to:to,
+                strength:Math.random()*10|0,
+                isIngoing:Math.random()>0.5
+            }
+        }
 
         function generateTransfers(countries){
             var transfers = [];
@@ -90,13 +97,11 @@
                 var countryB = countries[Math.random()*countries.length | 0];
                 if(countryA==countryB)
                     continue;
-                var transfer = [countryA.center,countryB.center];
-                transfers.push(transfer);
+                transfers.push(generateTransfer(countryA.center,countryB.center));
             }
             var mid = findCountry('Austria').center;
             for(var i=0;i<countries.length/4;i++){
-                var other = countries[i].center;
-                transfers.push([mid,other]);
+                transfers.push(generateTransfer(mid,countries[i].center));
             }
             return transfers;
         }

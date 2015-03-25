@@ -37,7 +37,6 @@ function generateAtmosphere(){
         depthWrite:false
         });
     material.transparent = true;
-    console.log(shader.fragmentShader);
     var sphere = new THREE.Mesh( geometry, material );
     return sphere;
 }
@@ -122,8 +121,8 @@ function generateTransfers(scene) {
     var curves = [];
     for(var i=0;i<transfers.length;i++){
         var transfer = transfers[i];
-        var from = latlongToXYZ(transfer[0]);
-        var to = latlongToXYZ(transfer[1]);
+        var from = latlongToXYZ(transfer.from);
+        var to = latlongToXYZ(transfer.to);
         var normal = from.clone();
         normal.sub(to);
         var mid = slerp(from,to,0.5);
@@ -137,7 +136,11 @@ function generateTransfers(scene) {
         var curve2 = new THREE.CubicBezierCurve3(mid,anch2,to,to);
         var geometry = new THREE.Geometry();
         geometry.vertices = merge(curve.getPoints( 20 ),curve2.getPoints(20));
-        curves.push(geometry.vertices);
+        curves.push({
+            points:geometry.vertices,
+            strength:Math.max(1,transfer.strength*curve.getLength()/10),
+            length:curve.getLength()*2
+        });
         var material = new THREE.LineBasicMaterial( {
             color : 0xff0000,
             opacity:0.5,
