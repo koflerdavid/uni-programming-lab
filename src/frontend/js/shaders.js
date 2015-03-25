@@ -11,11 +11,11 @@ Shaders = {
         fragmentShader: [
         'varying vec3 vNormal;',
         'void main() {',
-            'float lambert =dot( vNormal, vec3( 1.0, 1.0, 1.0 ));',
-            'float atmo = pow(0.8 - dot(vNormal,vec3(0.0,0.0,1.0)),2.0);',
+            'vec3 light = normalize(vec3(1.0));',
+            'float lambert =dot(vNormal, light);',
+            'float atmo = pow(0.8 - dot(vNormal,vec3(0.0,0.0,1.0)),2.0)*9.0;',
             'atmo = clamp(atmo,0.0,1.0);',
-            'gl_FragColor = vec4(vec3(atmo),1.0);',
-            'gl_FragColor = vec4(vec3(0.5)*(lambert+atmo*10.0),0.5);',
+            'gl_FragColor = vec4(vec3(0.5)*(lambert+atmo),0.5);',
         '}'
         ].join('\n')
     }

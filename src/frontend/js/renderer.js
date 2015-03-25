@@ -11,6 +11,7 @@ var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 
 var globalScale = 50;
+var particles = null;
 
 init();
 animate();
@@ -32,7 +33,8 @@ function generateAtmosphere(){
     var material = new THREE.ShaderMaterial({
         uniforms:uniforms,
         vertexShader:shader.vertexShader,
-        fragmentShader:shader.fragmentShader
+        fragmentShader:shader.fragmentShader,
+        depthWrite:false
         });
     material.transparent = true;
     console.log(shader.fragmentShader);
@@ -117,6 +119,7 @@ function merge(p1,p2){
 
 function generateTransfers(scene) {
     var transfers = GLOBALDATA.transfers;
+    var curves = [];
     for(var i=0;i<transfers.length;i++){
         var transfer = transfers[i];
         var from = latlongToXYZ(transfer[0]);
@@ -124,7 +127,7 @@ function generateTransfers(scene) {
         var normal = from.clone();
         normal.sub(to);
         var mid = slerp(from,to,0.5);
-        mid.multiplyScalar(globalScale*(1+(normal.length()/globalScale)/5));
+        mid.multiplyScalar(globalScale*(1.1+(normal.length()/globalScale)/5));
         var anch1 = mid.clone();
         anch1.add(normal.clone().multiplyScalar(0.5));
         var anch2 = mid.clone();
@@ -134,19 +137,27 @@ function generateTransfers(scene) {
         var curve2 = new THREE.CubicBezierCurve3(mid,anch2,to,to);
         var geometry = new THREE.Geometry();
         geometry.vertices = merge(curve.getPoints( 20 ),curve2.getPoints(20));
-        var material = new THREE.LineBasicMaterial( { color : 0xff0000,linewidth: Math.random()*5 });
-        material.color.setRGB(Math.random(),Math.random(),Math.random());
+        curves.push(geometry.vertices);
+        var material = new THREE.LineBasicMaterial( {
+            color : 0xff0000,
+            opacity:0.5,
+            transparent:true,
+            //linewidth: Math.random()*5,
+            depthWrite:true });
+        //material.color.setRGB(Math.random(),Math.random(),Math.random());
         var curveObject = new THREE.Line( geometry, material);
         scene.add(curveObject);
     }
+    return curves;
 }
 
 function addToScene(scene) {
     scene.add(generateBorders());
     scene.add(generateSphere());
     scene.add(generateAtmosphere());
-    scene.add(generateCenters());
-    generateTransfers(scene);
+    //scene.add(generateCenters());
+    var curves = generateTransfers(scene);
+    particles = new Particles(scene,curves);
 }
 
 function init() {
@@ -188,6 +199,7 @@ function onWindowResize() {
 function animate() {
     requestAnimationFrame( animate );
 
+    particles.update();
     controls.update();
     renderer.render( scene, camera );
     stats.update();
