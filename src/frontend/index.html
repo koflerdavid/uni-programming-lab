@@ -38,6 +38,9 @@
         <script src="js/lib/stats.min.js"></script>
         <script src="js/lib/OrbitControls.js"></script>
         <script src="data/countries.geo.json"></script>
+        <script src="js/shaders.js"></script>
+        <script src="js/particles.js"></script>
+        <script src="js/renderer.js"></script>
         <script>
         function processCountries(data){
             var countries = [];
@@ -89,9 +92,9 @@
             }
         }
 
-        function generateTransfers(countries){
+        function generateRandomTransfers(countries){
             var transfers = [];
-            var transfernum = 0;
+            var transfernum = 10;
             for(var i=0;i<transfernum;i++){
                 var countryA = countries[Math.random()*countries.length | 0];
                 var countryB = countries[Math.random()*countries.length | 0];
@@ -100,22 +103,21 @@
                 transfers.push(generateTransfer(countryA.center,countryB.center));
             }
             var mid = findCountry('Austria').center;
-            for(var i=0;i<countries.length/4;i++){
-                transfers.push(generateTransfer(mid,countries[i].center));
-            }
+            if(false)
+                for(var i=0;i<countries.length/4;i++)
+                    transfers.push(generateTransfer(mid,countries[i].center));
             return transfers;
         }
 
         var countries = processCountries(COUNTRY_DATA);
-        var transfers = generateTransfers(countries);
+        var transfers = generateRandomTransfers(countries);
         var GLOBALDATA = {
             countries:countries,
             transfers:transfers
         }
+        var glrenderer = new Renderer();
+        setInterval(function(){glrenderer.updateTransfers(generateRandomTransfers(countries))},3000);
         </script>
-        <script src="js/shaders.js"></script>
-        <script src="js/particles.js"></script>
-        <script src="js/renderer.js"></script>
     </body>
 </html>
 

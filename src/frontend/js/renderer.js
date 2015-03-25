@@ -12,9 +12,7 @@ var windowHalfY = window.innerHeight / 2;
 
 var globalScale = 50;
 var particles = null;
-
-init();
-animate();
+var transferGroup = null;
 
 function generateSphere(){
     var geometry = new THREE.SphereGeometry( globalScale-0.2, 32, 32 );
@@ -116,8 +114,7 @@ function merge(p1,p2){
     return all;
 }
 
-function generateTransfers(scene) {
-    var transfers = GLOBALDATA.transfers;
+function generateTransfers(scene,transfers) {
     var curves = [];
     for(var i=0;i<transfers.length;i++){
         var transfer = transfers[i];
@@ -159,8 +156,6 @@ function addToScene(scene) {
     scene.add(generateSphere());
     scene.add(generateAtmosphere());
     //scene.add(generateCenters());
-    var curves = generateTransfers(scene);
-    particles = new Particles(scene,curves);
 }
 
 function init() {
@@ -201,10 +196,23 @@ function onWindowResize() {
 
 function animate() {
     requestAnimationFrame( animate );
-
-    particles.update();
+    if(particles!=null)
+        particles.update();
     controls.update();
     renderer.render( scene, camera );
     stats.update();
 }
 
+var Renderer = function(){
+    var self = this;
+    self.updateTransfers = function(transfers){
+        if(transferGroup!=null)
+            scene.remove(transferGroup);
+        transferGroup = new THREE.Group();
+        var curves = generateTransfers(transferGroup,transfers);
+        particles = new Particles(transferGroup,curves);
+        scene.add(transferGroup);
+    }
+    init();
+    animate();
+}
