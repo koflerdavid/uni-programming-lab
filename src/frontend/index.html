@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>three.js webgl - geometry - vertex colors</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                color: #808080;
+                font-family:Monospace;
+                font-size:13px;
+                text-align:center;
+
+                background-color: #fff;
+                margin: 0px;
+                overflow: hidden;
+            }
+
+            #info {
+                position: absolute;
+                top: 0px; width: 100%;
+                padding: 5px;
+            }
+
+            a {
+
+                color: #0080ff;
+            }
+
+        </style>
+    </head>
+    <body>
+
+        <div id="container"></div>
+        <script src="js/lib/three.min.js"></script>
+        <script src="js/lib/Detector.js"></script>
+        <script src="js/lib/stats.min.js"></script>
+        <script src="js/lib/OrbitControls.js"></script>
+        <script src="data/countries.geo.json"></script>
+        <script src="js/shaders.js"></script>
+        <script src="js/particles.js"></script>
+        <script src="js/renderer.js"></script>
+        <script>
+        function processCountries(data){
+            var countries = [];
+            var ctrs = data.features;
+            for(var i=0;i<ctrs.length;i++){
+                var ctr = ctrs[i];
+                var name = ctr.properties.name;
+                var center = [0,0];
+                var polygons = [];
+                var polyType = ctr.geometry.type;
+                var polys = ctr.geometry.coordinates;
+                var vertNum = 0;
+                for(var k=0;k<polys.length;k++){
+                    var currentPoly = [];
+                    polygons.push(currentPoly);
+                    var latlongs = polys[k].length==1 ? polys[k][0] : polys[k];
+                    for(var j=0;j<latlongs.length;j++){
+                        currentPoly.push(latlongs[j]);
+                        center[0]+=latlongs[j][0]/100;
+                        center[1]+=latlongs[j][1]/100;
+                        vertNum++;
+                    }
+                }
+                center[0]*=100/vertNum;
+                center[1]*=100/vertNum;
+                var country = {
+                    name: name,
+                    polys: polygons,
+                    center: center
+                }
+                countries.push(country);
+            }
+            return countries;
+        }
+
+        function findCountry(name){
+            for(var i=0;i<countries.length;i++){
+                if(countries[i].name==name)
+                    return countries[i];
+            }
+        }
+        
+        function generateTransfer(from,to){
+            return {
+                from:from,
+                to:to,
+                strength:Math.random()*10|0,
+                isIngoing:Math.random()>0.5
+            }
+        }
+
+        function generateRandomTransfers(countries){
+            var transfers = [];
+            var transfernum = 10;
+            for(var i=0;i<transfernum;i++){
+                var countryA = countries[Math.random()*countries.length | 0];
+                var countryB = countries[Math.random()*countries.length | 0];
+                if(countryA==countryB)
+                    continue;
+                transfers.push(generateTransfer(countryA.center,countryB.center));
+            }
+            var mid = findCountry('Austria').center;
+            if(false)
+                for(var i=0;i<countries.length/4;i++)
+                    transfers.push(generateTransfer(mid,countries[i].center));
+            return transfers;
+        }
+
+        var countries = processCountries(COUNTRY_DATA);
+        var transfers = generateRandomTransfers(countries);
+        var GLOBALDATA = {
+            countries:countries,
+            transfers:transfers
+        }
+        var glrenderer = new Renderer();
+        setInterval(function(){glrenderer.updateTransfers(generateRandomTransfers(countries))},3000);
+        </script>
+    </body>
+</html>
+
