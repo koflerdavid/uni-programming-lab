@@ -111,11 +111,7 @@
 
         var countries = processCountries(COUNTRY_DATA);
         var transfers = generateRandomTransfers(countries);
-        var GLOBALDATA = {
-            countries:countries,
-            transfers:transfers
-        }
-        var glrenderer = new Renderer();
+        var glrenderer = new Renderer(countries);
         setInterval(function(){glrenderer.updateTransfers(generateRandomTransfers(countries))},3000);
         </script>
     </body>
