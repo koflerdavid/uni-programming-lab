@@ -1,4 +1,4 @@
-(function (THREE, Detector, Particles, Shaders, Stats, undefined) {
+var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined) {
     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
     THREE.ImageUtils.crossOrigin = '';
 
@@ -204,7 +204,7 @@
         stats.update();
     }
 
-    window.Renderer = function(countries){
+    return function(countries){
         var self = this;
         self.updateTransfers = function(transfers){
             if(transferGroup!=null)
