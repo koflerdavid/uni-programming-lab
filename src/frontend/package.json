@@ -9,8 +9,9 @@
         "url": "https://github.com/koflerdavid/uni-programming-lab.git"
     },
     "dependencies": {
-        "connect": "*",
-        "serve-static": "*"
+        "express": "4.*",
+        "neo4j-simple": "0.7.*",
+        "bluebird": "2.9.*"
     },
     "license": "MIT"
 }
