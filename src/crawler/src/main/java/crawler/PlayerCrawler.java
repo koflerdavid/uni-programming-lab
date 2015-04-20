@@ -1,9 +1,5 @@
 package crawler;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-
 import model.Player;
 import model.Team;
 import model.Transfer;
@@ -13,26 +9,31 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.function.Consumer;
+
 public class PlayerCrawler {
-	private Team team;
-	private LinkedHashSet<Player> players;
+    private ArrayList<Consumer<Player>> onPlayerCrawledListeners = new ArrayList<>();
 
-	public PlayerCrawler(LinkedHashSet<Player> players, Team team) {
-		this.players = players;
-		this.setTeam(team);
+    public void onPlayerCrawled(Consumer<Player> listener) {
+        onPlayerCrawledListeners.add(listener);
+    }
+
+    protected void emitPlayerCrawled(Player player) {
+        for (Consumer<Player> listener : onPlayerCrawledListeners) {
+            listener.accept(player);
+        }
+    }
+
+	public void crawlAllPlayerPages(Collection<Player> players) {
+        players.forEach(this::crawlPlayerPage);
 	}
 
-	public PlayerCrawler() {
-
-	}
-
-	public void crawlAllPlayerPages() {
-		for (Player player : players) {
-			crawlPlayerPage(player);
-		}
-	}
-
-	private void crawlPlayerPage(Player player) {
+	public void crawlPlayerPage(Player player) {
 		String uri = player.getUri();
 		LinkedHashSet<Transfer> transferHistory = new LinkedHashSet<Transfer>();
 
@@ -43,7 +44,7 @@ public class PlayerCrawler {
 					.connect(uri)
 					.userAgent(
 							"Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0")
-					.timeout(3000).get();
+					.timeout(Utils.HTTP_TIMEOUT).get();
 
 			// Get all the data by iterating through the player info
 			Elements playerInfo = doc.getElementsByTag("tr");
@@ -194,15 +195,16 @@ public class PlayerCrawler {
 
 			player.setTransferHistory(transferHistory);
 
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+            emitPlayerCrawled(player);
 
-	}
+        } catch (IOException e) {
+            System.err.println("TournamentCrawler failed");
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            System.err.println("Sleep failed");
+            e.printStackTrace();
+        }
+    }
 
 	public static void main(String[] args) {
 		PlayerCrawler pc = new PlayerCrawler();
@@ -213,14 +215,5 @@ public class PlayerCrawler {
 				"http://www.soccerbase.com/players/player.sd?player_id=39937",
 				"Gerard Pique");
 		pc.crawlPlayerPage(p);
-
-	}
-
-	public Team getTeam() {
-		return team;
-	}
-
-	public void setTeam(Team team) {
-		this.team = team;
 	}
 }
