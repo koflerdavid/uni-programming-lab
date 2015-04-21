@@ -3,9 +3,8 @@
     max-height: 200px;
     overflow-x: hidden;
     display: inline;
-    max-width:200px;
-    width:200px;
-    position: relative;
+    width: 100%;
+    top:auto;
 }
 .scrollable-menu {
     overflow: hidden;

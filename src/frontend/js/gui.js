@@ -1,18 +1,13 @@
-
 var IntelliSearch = React.createClass({
     onSelect: function(e){
         this.onTextChange('');
         this.props.onSelect(e);
     },
     render: function(){
-        var style ={
-            position:'absolute',
-            padding:'20px',
-        }
         return (
-            <div style={style}>
+            <div>
                 <SearchBar onTextChange={this.onTextChange} startText={this.state.startText}/>
-                <SearchResult result={this.state.result} onSelect={this.onSelect}/>
+                <SearchResult result={this.state.result} onSelect={this.onSelect} visible={this.state.startText!=''}/>
             </div>
             );
     },
@@ -50,6 +45,8 @@ var SearchBar = React.createClass({
 });
 var SearchResult = React.createClass({
     render: function(){
+        if(!this.props.visible)
+            return null
         var rows = [];
         var lastCategory = null;
         var self = this;
@@ -80,7 +77,7 @@ var Divider = React.createClass({
 });
 var ResultCategory = React.createClass({
     staticLABELS: {
-        Players:'default',
+        Players:'info',
         Tournaments:'success',
         Teams:'danger',
     },
@@ -147,20 +144,22 @@ var RowList = React.createClass({
     }
 });
 var DetailView = React.createClass({
+    staticLABELS: {
+        Players:'info',
+        Tournaments:'success',
+        Teams:'danger',
+    },
     addRow:function(rows,name,data){
         if(data && data.length>0)
             rows.push(<DetailRow name={name} data={data}/>);
     },
+    handleExit: function(){
+        this.props.onSelected(null);
+    },
     render: function(){
-        var style ={
-            position:'absolute',
-            padding:'20px',
-            right:'0px',
-            width:'20%'
-        }
         var selected = this.props.selected;
-        if(!selected)
-            return (<div></div>)
+        if(!selected || this.props.hidden)
+            return null
         var name = selected.name;
         var rows = [];
         switch(selected.type){
@@ -193,13 +192,16 @@ var DetailView = React.createClass({
                 break;
         }
         return (
-            <div style={style}>
-                <div className="panel panel-default panel-transparent">
-                    <div className="panel-heading">{selected.type.slice(0,selected.type.length-1)}</div>
-                    <ul className='list-group list-group-transparent'>
-                        {rows}
-                    </ul>
+            <div className={"panel panel-"+this.staticLABELS[selected.type]+" panel-transparent"}>
+                <div className="panel-heading">
+                    <button type="button" className="btn btn-default btn-sm pull-right" onClick={this.handleExit}>
+                        <span className="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                    </button>
+                    <h6>{selected.type.slice(0,selected.type.length-1)}</h6>
                 </div>
+                <ul className='list-group list-group-transparent'>
+                    {rows}
+                </ul>
             </div>
             )
     }
@@ -211,15 +213,28 @@ var App = React.createClass({
         Teams:'team',
     },
     render: function(){
+        var style ={
+            position:'absolute',
+            right:'0px',
+            margin:'20px',
+            width:'20%',
+        }
         return (
-        <div>
+        <div style={style}>
             <IntelliSearch onSelect={this.onSelect} />
+            <br/>
             <DetailView selected={this.state.selected} onSelected={this.onSelect} />
         </div>
         )
     },
     onSelect: function(e){
         var self = this;
+        if(!e){
+            if(self.isMounted())
+                self.setState(this.getInitialState());
+            window.glrenderer.updateTransfers([]);
+            return
+        }
         $.getJSON("/"+this.staticURL[e.type]+'?name='+e.name, function(result){
             result.type = e.type;
             if(self.isMounted()){
