@@ -119,8 +119,8 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         var curves = [];
         for(var i=0;i<transfers.length;i++){
             var transfer = transfers[i];
-            var from = latlongToXYZ(transfer.from);
-            var to = latlongToXYZ(transfer.to);
+            var from = latlongToXYZ(transfer.from.pos);
+            var to = latlongToXYZ(transfer.to.pos);
             var normal = from.clone();
             normal.sub(to);
             var mid = slerp(from,to,0.5);

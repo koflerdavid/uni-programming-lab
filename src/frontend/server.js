@@ -45,6 +45,18 @@ app.get('/tournaments', function (req, res) {
         });
 });
 
+app.get('/tournament', function (req, res) {
+    var name = req.query.name;
+    res.send(JSON.stringify({
+        name: name,
+        date:"2015",
+        teams:[
+            {name:'team1',uid:'team1'},
+            {name:'team2',uid:'team2'},
+        ]
+    }));
+});
+
 app.get('/team', function (req, res) {
     var name = req.query.name;
     res.send(JSON.stringify({
@@ -92,6 +104,9 @@ app.get('/team/:team/transfers/to', function (req, res) {
 
 app.get('/player', function (req, res) {
     var name = req.query.name;
+    var barce = {name:'Barce',uid:'Barce',pos:[-15.132555052631583,11.908241315789475]};
+    var man = {name:'Manchester',uid:'man',pos:[11.88548080645161,-0.5387664516129034]};
+    var ibk = {name:'Innsbruck',uid:'ibk',pos:[159.8473874324324,-8.792477783783786]};
     res.send(JSON.stringify({
         name: name,
         team:'ASdasd',
@@ -99,12 +114,14 @@ app.get('/player', function (req, res) {
         nationality:'Austria',
         transfers:[
             {
-                from: 'Barce',
-                to: 'Manchester'
+                from: barce,
+                to: man,
+                strength: 5,
             },
             {
-                from: 'Manchester',
-                to: 'Wacker Innsbruck'
+                from: man,
+                to: ibk,
+                strength: 5,
             }
         ]
     }));

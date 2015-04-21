@@ -114,35 +114,31 @@ var DetailRow = React.createClass({
         )
     }
 });
-var DetailTransfers = React.createClass({
+var SelectableRow = React.createClass({
+    handleClick: function(){
+        this.props.onSelected(this.props.entity);
+    },
     render: function(){
-        var rows = [];
-        var transfers = this.props.transfers;
-        rows.push(<li className='list-group-item'>{transfers[0].from}</li>);
-        transfers.forEach(function(transfer){
-            rows.push(<li className='list-group-item'>{transfer.to}</li>);
-        });
-        
+        var style = {
+            cursor:'pointer'
+        }
         return (
-        <li className='list-group-item'>
-            Transfers
-            <ul className='list-group list-group-transparent'>
-                {rows}
-            </ul>
-        </li>
+            <li style={style} className='list-group-item' onClick={this.handleClick}>{this.props.name}</li>
         )
     }
 });
-var DetailPlayers = React.createClass({
+var RowList = React.createClass({
     render: function(){
+        var self = this;
         var rows = [];
-        var players = this.props.players;
-        players.forEach(function(player){
-            rows.push(<li className='list-group-item'>{player.name}</li>);
+        var entities = this.props.entities;
+        entities.forEach(function(entity){
+            entity.type=self.props.type;
+            rows.push(<SelectableRow entity={entity} name={entity.name} onSelected={self.props.onSelected}/>);
         });
         return (
         <li className='list-group-item'>
-            Transfers
+            {this.props.type}
             <ul className='list-group list-group-transparent'>
                 {rows}
             </ul>
@@ -160,7 +156,7 @@ var DetailView = React.createClass({
             position:'absolute',
             padding:'20px',
             right:'0px',
-            width:'40%'
+            width:'20%'
         }
         var selected = this.props.selected;
         if(!selected)
@@ -173,14 +169,27 @@ var DetailView = React.createClass({
                 this.addRow(rows,'Age',selected.age.toString());
                 this.addRow(rows,'Nationality',selected.nationality);
                 this.addRow(rows,'Team',selected.team);
-                if(selected.transfers&&selected.transfers.length>0)
-                    rows.push(<DetailTransfers transfers={selected.transfers} />);
+                var teams = [];
+                var transfers = selected.transfers;
+                if(transfers&&transfers.length>0){
+                    teams.push(transfers[0].from);
+                    transfers.forEach(function(transfer){
+                        teams.push(transfer.to);
+                    });
+                    rows.push(<RowList entities={teams} type="Teams" onSelected={this.props.onSelected}/>);
+                }
                 break;
             case 'Teams':
                 this.addRow(rows,'Name',selected.name);
                 this.addRow(rows,'Year Formed',selected.yearformed.toString());
                 if(selected.players&&selected.players.length>0)
-                    rows.push(<DetailPlayers players={selected.players} />);
+                    rows.push(<RowList entities={selected.players} type="Players" onSelected={this.props.onSelected}/>);
+                break;
+            case 'Tournaments':
+                this.addRow(rows,'Name',selected.name);
+                this.addRow(rows,'Date',selected.date);
+                if(selected.teams&&selected.teams.length>0)
+                    rows.push(<RowList entities={selected.teams} type="Teams" onSelected={this.props.onSelected}/>);
                 break;
         }
         return (
@@ -205,7 +214,7 @@ var App = React.createClass({
         return (
         <div>
             <IntelliSearch onSelect={this.onSelect} />
-            <DetailView selected={this.state.selected} />
+            <DetailView selected={this.state.selected} onSelected={this.onSelect} />
         </div>
         )
     },
@@ -213,9 +222,16 @@ var App = React.createClass({
         var self = this;
         $.getJSON("/"+this.staticURL[e.type]+'?name='+e.name, function(result){
             result.type = e.type;
-            console.log(result);
-            if(self.isMounted())
+            if(self.isMounted()){
+                var transfers = [];
+                switch(e.type){
+                    case 'Teams':break;
+                    case 'Tournaments':break;
+                    case 'Players':transfers=result.transfers;break;
+                }
+                window.glrenderer.updateTransfers(transfers);
                 self.setState({selected:result});
+            }
         });
     },
     getInitialState: function(){

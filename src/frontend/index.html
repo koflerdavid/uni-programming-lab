@@ -74,8 +74,8 @@
         
         function generateTransfer(from,to){
             return {
-                from:from,
-                to:to,
+                from:{pos:from},
+                to:{pos:to},
                 strength:Math.random()*10|0,
                 isIngoing:Math.random()>0.5
             }
@@ -101,7 +101,7 @@
         var countries = processCountries(COUNTRY_DATA);
         var transfers = generateRandomTransfers(countries);
         var glrenderer = new Renderer(countries);
-        setInterval(function(){glrenderer.updateTransfers(generateRandomTransfers(countries))},3000);
+        //setInterval(function(){glrenderer.updateTransfers(generateRandomTransfers(countries))},3000);
         </script>
     </body>
 </html>
