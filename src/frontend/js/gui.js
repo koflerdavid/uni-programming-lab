@@ -225,9 +225,12 @@ var App = React.createClass({
             if(self.isMounted()){
                 var transfers = [];
                 switch(e.type){
-                    case 'Teams':break;
-                    case 'Tournaments':break;
-                    case 'Players':transfers=result.transfers;break;
+                    case 'Tournaments':
+                        break;
+                    case 'Teams':
+                    case 'Players':
+                        transfers=result.transfers;
+                        break;
                 }
                 window.glrenderer.updateTransfers(transfers);
                 self.setState({selected:result});

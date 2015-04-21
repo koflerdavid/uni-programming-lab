@@ -59,6 +59,9 @@ app.get('/tournament', function (req, res) {
 
 app.get('/team', function (req, res) {
     var name = req.query.name;
+    var barce = {name:'Barce',uid:'Barce',pos:[2.173403, 41.385064]};
+    var man = {name:'Manchester',uid:'man',pos:[-2.242631, 53.480759]};
+    var ibk = {name:'Innsbruck',uid:'ibk',pos:[11.404102, 47.269212]};
     res.send(JSON.stringify({
         name: name,
         trainer: 'Best trainer',
@@ -73,6 +76,18 @@ app.get('/team', function (req, res) {
             {name:'player3',uid:'player2'},
             {name:'player2',uid:'player2'},
             {name:'player6',uid:'player2'},
+        ],
+        transfers:[
+            {
+                from: barce,
+                to: man,
+                strength: 5,
+            },
+            {
+                from: man,
+                to: ibk,
+                strength: 5,
+            }
         ]
     }));
 });
