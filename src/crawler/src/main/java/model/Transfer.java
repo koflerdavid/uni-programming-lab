@@ -1,9 +1,11 @@
 package model;
 
+import java.util.Date;
+
 public class Transfer {
 	private Team team;
-	private String from;
-	private String to;
+	private Date from;
+	private Date to;
 	private String fee;
 
 	public Team getTeam() {
@@ -14,19 +16,19 @@ public class Transfer {
 		this.team = team;
 	}
 
-	public String getFrom() {
+	public Date getFrom() {
 		return from;
 	}
 
-	public void setFrom(String from) {
+	public void setFrom(Date from) {
 		this.from = from;
 	}
 
-	public String getTo() {
+	public Date getTo() {
 		return to;
 	}
 
-	public void setTo(String to) {
+	public void setTo(Date to) {
 		this.to = to;
 	}
 

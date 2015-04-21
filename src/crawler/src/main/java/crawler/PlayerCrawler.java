@@ -10,6 +10,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -36,6 +38,7 @@ public class PlayerCrawler {
 	public void crawlPlayerPage(Player player) {
 		String uri = player.getUri();
 		LinkedHashSet<Transfer> transferHistory = new LinkedHashSet<Transfer>();
+        SimpleDateFormat dateParser = new SimpleDateFormat("dd-MMM-yyyy");
 
 		try {
 			Thread.sleep(Utils.HTTP_SLEEP);
@@ -57,7 +60,7 @@ public class PlayerCrawler {
 
 			// get player number
 			Element e = it.next();
-			if (e.text().indexOf(".") >= 0) {
+			if (e.text().contains(".")) {
 				player.setNumber(Integer.parseInt(e.text().substring(0,
 						e.text().indexOf("."))));
 			} else {
@@ -93,7 +96,7 @@ public class PlayerCrawler {
 
 			// get height
 			e = it.next();
-			if (e.text().indexOf("(") >= 0) {
+			if (e.text().contains("(")) {
 				player.setHeight(e.text().substring(e.text().indexOf("(") + 1,
 						e.text().indexOf(")")));
 			} else {
@@ -103,7 +106,7 @@ public class PlayerCrawler {
 
 			// get weight
 			e = it.next();
-			if (e.text().indexOf("(") >= 0) {
+			if (e.text().contains("(")) {
 				player.setWeight(e.text().substring(e.text().indexOf("(") + 1,
 						e.text().indexOf(")")));
 			} else {
@@ -148,8 +151,8 @@ public class PlayerCrawler {
 			System.out.println("Fee: " + player.getFee());
 
 			// Get transfer history
-			e = it.next();
-			e = it.next();
+			it.next();
+			it.next();
 			e = it.next();
 			System.out.println("Transfer History of " + player.getName());
 			do {
@@ -167,19 +170,19 @@ public class PlayerCrawler {
 				String from = Utils.trim(
 						e.text().substring(e.text().indexOf(",") - 6), 11);
 				System.out.println("\tDate Joined: " + from);
-				transfer.setFrom(from);
+				transfer.setFrom(dateParser.parse(from));
 
 				// get date to (empty if actual club)
 				String to = Utils.trim(
 						e.text().substring(e.text().lastIndexOf(", ") - 6), 11);
 				if (to.equals(from)) {
-					transfer.setTo("");
+					transfer.setTo(null);
 				} else {
-					transfer.setTo(to);
+					transfer.setTo(dateParser.parse(to));
 				}
 				System.out.println("\tDate Left: " + transfer.getTo());
 
-				if (e.text().indexOf("Loan") >= 0) {
+				if (e.text().contains("Loan")) {
 					transfer.setFee("Loan");
 					System.out.println("\tFee: Loan");
 				} else {
@@ -202,6 +205,9 @@ public class PlayerCrawler {
             e.printStackTrace();
         } catch (InterruptedException e) {
             System.err.println("Sleep failed");
+            e.printStackTrace();
+        } catch (ParseException e) {
+            System.err.println("Invalid date format");
             e.printStackTrace();
         }
     }
