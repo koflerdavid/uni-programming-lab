@@ -1,0 +1,31 @@
+.scrollable-menu {
+    height: auto;
+    max-height: 200px;
+    overflow-x: hidden;
+    display: inline;
+    max-width:200px;
+    width:200px;
+    position: relative;
+}
+.scrollable-menu {
+    overflow: hidden;
+}
+.scrollable-menu:hover {
+    overflow-y: scroll;
+}
+
+.panel-transparent {
+    background: none;
+}
+
+.panel-transparent .panel-body{
+    background: rgba(255,255,255, 0.5)!important;
+}
+
+.list-group-transparent{
+    background: none;
+}
+
+.list-group-transparent .list-group-item{
+    background: rgba(255,255,255, 0.5)!important;
+}

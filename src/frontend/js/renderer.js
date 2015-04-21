@@ -164,7 +164,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
 
         camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
         camera.position.z = globalScale*4;
-        controls = new THREE.OrbitControls(camera);
+        controls = new THREE.OrbitControls(camera,container);
         controls.rotateSpeed = 0.3;
         controls.noPan = true;
 
@@ -172,7 +172,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         addToScene(countries, scene);
 
         renderer = new THREE.WebGLRenderer( { antialias: true } );
-        renderer.setClearColor( 0x000000 );
+        renderer.setClearColor( 0x111111 );
         renderer.setPixelRatio( window.devicePixelRatio );
         renderer.setSize( window.innerWidth, window.innerHeight );
         container.appendChild( renderer.domElement );
@@ -180,7 +180,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         stats = new Stats();
         stats.domElement.style.position = 'absolute';
         stats.domElement.style.top = '0px';
-        container.appendChild( stats.domElement );
+        //container.appendChild( stats.domElement );
 
         window.addEventListener( 'resize', onWindowResize, false );
     }

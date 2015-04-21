@@ -11,6 +11,29 @@ var soccervisConnection = new soccervis.connection(neo4j_host);
 
 app.use(express.static(__dirname)).listen(port);
 
+app.get('/search', function (req, res) {
+    var searchText = req.query.text;
+    //TODO use searchtext to filter all tournaments/players/teams
+    //the output just look like this:
+    var initArr = function(name){
+        var arr = [];
+        var l =(Math.random()*10)|0;
+        for(var i=0;i<l;i++){
+            var str = name+i;
+            arr.push({name:str,uid:str})
+        }
+        return arr;
+    }
+    var tournaments = initArr('Tournament');
+    var players = initArr('Player');
+    var teams = initArr('Team');
+    res.send(JSON.stringify({
+        Tournaments: tournaments,
+        Players:players,
+        Teams:teams
+    }));
+});
+
 app.get('/tournaments', function (req, res) {
     // Gets all tournaments
     soccervisConnection.getTournaments()
@@ -23,7 +46,23 @@ app.get('/tournaments', function (req, res) {
 });
 
 app.get('/team', function (req, res) {
-    res.send('Search teams');
+    var name = req.query.name;
+    res.send(JSON.stringify({
+        name: name,
+        trainer: 'Best trainer',
+        yearformed:2015,
+        website:'google.at',
+        players:[
+            {name:'player1',uid:'player1'},
+            {name:'player2',uid:'player2'},
+            {name:'player2',uid:'player2'},
+            {name:'player7',uid:'player2'},
+            {name:'player2',uid:'player2'},
+            {name:'player3',uid:'player2'},
+            {name:'player2',uid:'player2'},
+            {name:'player6',uid:'player2'},
+        ]
+    }));
 });
 
 app.get('/team/:team', function (req, res) {
@@ -52,7 +91,23 @@ app.get('/team/:team/transfers/to', function (req, res) {
 });
 
 app.get('/player', function (req, res) {
-    res.send('Search players');
+    var name = req.query.name;
+    res.send(JSON.stringify({
+        name: name,
+        team:'ASdasd',
+        age:12,
+        nationality:'Austria',
+        transfers:[
+            {
+                from: 'Barce',
+                to: 'Manchester'
+            },
+            {
+                from: 'Manchester',
+                to: 'Wacker Innsbruck'
+            }
+        ]
+    }));
 });
 
 app.get('/player/:player', function (req, res) {

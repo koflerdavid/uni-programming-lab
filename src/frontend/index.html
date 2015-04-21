@@ -1,48 +1,36 @@
-
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <title>three.js webgl - geometry - vertex colors</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <link href="bower_components/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
+        <link href="css/mycss.css" rel="stylesheet">
         <style>
             body {
-                color: #808080;
-                font-family:Monospace;
-                font-size:13px;
-                text-align:center;
-
-                background-color: #fff;
                 margin: 0px;
                 overflow: hidden;
             }
-
-            #info {
-                position: absolute;
-                top: 0px; width: 100%;
-                padding: 5px;
-            }
-
-            a {
-
-                color: #0080ff;
-            }
-
         </style>
     </head>
     <body>
 
+        <div id="gui"></div>
         <div id="container"></div>
+        <script src="bower_components/react/react.js"></script>
+        <script src="bower_components/react/JSXTransformer.js"></script>
         <script src="bower_components/jquery/dist/jquery.js"></script>
         <script src="bower_components/threejs/build/three.js"></script>
         <script src="bower_components/threejs/examples/js/libs/stats.min.js"></script>
         <script src="bower_components/threejs/examples/js/Detector.js"></script>
-        <script src="js/lib/OrbitControls.js"></script>
+        <script src="bower_components/threejs/examples/js/controls/OrbitControls.js"></script>
         <script src="data/countries.geo.json"></script>
         <script src="js/shaders.js"></script>
         <script src="js/particles.js"></script>
         <script src="js/renderer.js"></script>
+        <script src="js/gui.js" type="text/jsx"></script>
         <script>
+
         function processCountries(data){
             var countries = [];
             var ctrs = data.features;
