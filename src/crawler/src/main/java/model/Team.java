@@ -1,6 +1,6 @@
 package model;
 
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 
 public class Team {
 	private String uri;
@@ -14,8 +14,10 @@ public class Team {
 	private String address2;
 	private String address3;
 	private String postCode;
-	private LinkedHashSet<Player> players;
+	private HashSet<Player> players;
 	private String website;
+
+    private HashSet<Tournament> tournaments = new HashSet<>();
 
 	public Team(String uri, String name) {
 		this.uri = uri;
@@ -102,11 +104,11 @@ public class Team {
 		this.postCode = postCode;
 	}
 
-	public LinkedHashSet<Player> getPlayers() {
+	public HashSet<Player> getPlayers() {
 		return players;
 	}
 
-	public void setPlayers(LinkedHashSet<Player> players) {
+	public void setPlayers(HashSet<Player> players) {
 		this.players = players;
 	}
 
@@ -126,7 +128,15 @@ public class Team {
 		this.website = website;
 	}
 
-	@Override
+    public HashSet<Tournament> getTournaments() {
+        return tournaments;
+    }
+
+    public void setTournaments(HashSet<Tournament> tournaments) {
+        this.tournaments = tournaments;
+    }
+
+    @Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
