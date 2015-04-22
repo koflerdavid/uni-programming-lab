@@ -8,10 +8,7 @@ import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.schema.ConstraintDefinition;
 import org.neo4j.graphdb.schema.ConstraintType;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class Neo4jInserter {
     private GraphDatabaseService graphDb;
@@ -25,60 +22,57 @@ public class Neo4jInserter {
     }
 
     public Node createPlayer(Player player) {
-        HashMap<String, Object> parameters = new HashMap<>(7);
+        HashMap<String, Object> parameters = new HashMap<>(8);
         parameters.put("name", player.getName());
         parameters.put("age", player.getAge());
         parameters.put("uri", player.getUri());
-        parameters.put("birthdate", player.getBirthdate());
+        parameters.put("birthday", player.getBirthdate());
         parameters.put("birthplace", player.getBirthplace());
         parameters.put("height", player.getHeight());
         parameters.put("weight", player.getWeight());
         parameters.put("nationality", player.getNationality());
-//        parameters.put("position", player.getPosition());
 
-        Object result = graphDb
-                .execute("MERGE (player : Player {name: {name}, age: {age}, uri: {uri}," +
-                        "  birthdate: {birthdate}, birthplace: {birthplace}, height: {height}," +
-                        "  weight: {weight}, nationality: {nationality}})" +
+        Node nPlayer = (Node) graphDb
+                .execute("MERGE (player : Player { uri: {uri} })" +
+                        " SET player.name = {name}, player.age = {age}, player.birthday = {birthday}," +
+                        "  player.birthplace = {birthplace}, player.height = {height}, player.weight = {weight}," +
+                        "  player.nationality = {nationality}" +
                         " RETURN player", parameters)
                 .columnAs("player").next();
 
-        if (!(result instanceof Node)) {
-            throw new RuntimeException("Neo4j exception", (Throwable) result);
+        if (player.getTeam() != null) {
+            addPlayerToTeam(player.getTeam(), player);
         }
-
-        Node nPlayer = (Node) result;
-
-        parameters.clear();
-        parameters.put("playerUri", player.getUri());
-        parameters.put("teamUri", player.getTeam().getUri());
-
-        Relationship currentTeamMembership = (Relationship) graphDb
-                .execute("MATCH (player:Player)" +
-                        "  WHERE player.uri = {playerUri}" +
-                        " MATCH (team:Team)" +
-                        "  WHERE team.uri = {teamUri}" +
-                        " CREATE (player)-[teamMembership:" + SoccerRelationshipTypes.CURRENT_TEAM + "]-(team)" +
-                        " RETURN teamMembership", parameters)
-                .columnAs("teamMembership");
-
-        currentTeamMembership.setProperty("contractSigned", player.getDateSigned());
-//        currentTeamMembership.setProperty("position", player.getPosition());
-        currentTeamMembership.setProperty("fee", player.getFee());
-        currentTeamMembership.setProperty("number", player.getNumber());
 
         return nPlayer;
     }
 
     public Node createTeam(Team team) {
-        HashMap<String, Object> parameters = new HashMap<>(2);
-        parameters.put("name", team.getName());
+        HashMap<String, Object> parameters = new HashMap<>(11);
         parameters.put("uri", team.getUri());
+        parameters.put("name", team.getName());
+        parameters.put("nickname", team.getNickname());
+        parameters.put("website", team.getWebsite());
+        parameters.put("yearFormed", team.getYearFormed());
+        parameters.put("address1", team.getAddress1());
+        parameters.put("address2", team.getAddress2());
+        parameters.put("address3", team.getAddress3());
+        parameters.put("postcode", team.getPostCode());
+        parameters.put("chairman", team.getChairman());
+        parameters.put("ground", team.getGround());
 
-        return (Node) graphDb
-                .execute("MERGE (team : Team {name: {name}, country: {country}, uri: {uri})" +
+        Node nTeam = (Node) graphDb
+                .execute("MERGE (team : Team { uri: {uri} })" +
+                        " SET team.name = {name}, team.nickname = {nickname}, team.website = {website}," +
+                        "  team.yearFormed = {yearFormed}, team.address1 = {address1}, team.address1 = {address1}," +
+                        "  team.address2 = {address2}, team.address3 = {address3}, team.postcode = {postcode}," +
+                        "  team.chairman = {chairman}, team.ground = {ground}" +
                         " RETURN team", parameters)
                 .columnAs("team").next();
+
+        team.getTournaments().forEach((Tournament tournament) -> addTeamToTournament(tournament, team));
+
+        return nTeam;
     }
 
     public Node createTournament(Tournament tournament) {
@@ -88,14 +82,19 @@ public class Neo4jInserter {
         parameters.put("uri", tournament.getUri());
         parameters.put("country", tournament.getCountry());
 
-        return (Node) graphDb
-                .execute("MERGE (tournament : Tournament {name: {name}, country: {country}, uri: {uri})" +
+        Node nTournament = (Node) graphDb
+                .execute("MERGE (tournament : Tournament { uri: {uri} })" +
+                        " SET tournament.name = {name}, tournament.country = {country}" +
                         " RETURN tournament", parameters)
                 .columnAs("tournament").next();
+
+        tournament.getTeams().forEach((Team team) -> addTeamToTournament(tournament, team));
+
+        return nTournament;
     }
 
     public Relationship addTeamToTournament(Tournament tournament, Team team) {
-        HashMap<String, Object> parameters = new HashMap<>(3);
+        HashMap<String, Object> parameters = new HashMap<>(2);
 
         parameters.put("tournamentUri", tournament.getUri());
         parameters.put("teamUri", team.getUri());
@@ -103,9 +102,29 @@ public class Neo4jInserter {
         return (Relationship) graphDb
                 .execute("MATCH (tournament:Tournament), (team:Team)" +
                         "  WHERE tournament.uri = {tournamentUri} AND team.uri = {teamUri}" +
-                        " CREATE (team)-[participation:" + SoccerRelationshipTypes.IN_TOURNAMENT + "]-(tournament)" +
+                        " MERGE (team)-[participation:" + SoccerRelationshipTypes.IN_TOURNAMENT + "]->(tournament)" +
                         " RETURN participation", parameters)
                 .columnAs("participation").next();
+    }
+
+    public Relationship addPlayerToTeam(Team team, Player player) {
+        HashMap<String, Object> parameters = new HashMap<>(6);
+
+        parameters.put("teamUri", team.getUri());
+        parameters.put("playerUri", player.getUri());
+        parameters.put("contractSigned", player.getDateSigned());
+        parameters.put("position", player.getPosition());
+        parameters.put("fee", player.getFee());
+        parameters.put("number", player.getNumber());
+
+        return (Relationship) graphDb
+                .execute("MATCH (team:Team), (player:Player)" +
+                        "  WHERE team.uri = {teamUri} AND player.uri = {playerUri}" +
+                        " MERGE (team)-[membership:" + SoccerRelationshipTypes.CURRENT_TEAM + "]-(player)" +
+                        "  SET membership.contractSigned = {contractSigned}, membership.fee = {fee}," +
+                        "   membership.number = {number}, membership.position = {position}" +
+                        " RETURN membership", parameters)
+                .columnAs("membership").next();
     }
 
     public static void createSchema(GraphDatabaseService graphDb) {
@@ -180,7 +199,7 @@ public class Neo4jInserter {
 
     public static void main(String[] args) {
         String uri = "http://www.soccerbase.com/tournaments/home.sd";
-        String dbPath = "neo4j.db";
+        String dbPath = args[0];
 
         GraphDatabaseService graphDb = openGrapDb(dbPath);
         createSchema(graphDb);
