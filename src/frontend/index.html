@@ -16,7 +16,9 @@
     <body>
 
         <div id="gui"></div>
-        <div id="container"></div>
+        <div id="gl">
+            <div id="overlay"></div>
+        </div>
         <script src="bower_components/react/react.js"></script>
         <script src="bower_components/react/JSXTransformer.js"></script>
         <script src="bower_components/jquery/dist/jquery.js"></script>
@@ -28,6 +30,8 @@
         <script src="js/shaders.js"></script>
         <script src="js/particles.js"></script>
         <script src="js/renderer.js"></script>
+        <script src="js/overlay.js"></script>
+        <script src="js/globe.js"></script>
         <script src="js/gui.js" type="text/jsx"></script>
         <script>
 
@@ -100,8 +104,7 @@
 
         var countries = processCountries(COUNTRY_DATA);
         var transfers = generateRandomTransfers(countries);
-        var glrenderer = new Renderer(countries);
-        //setInterval(function(){glrenderer.updateTransfers(generateRandomTransfers(countries))},3000);
+        var globe = new Globe(countries,$('#gl')[0],$('#overlay'));
         </script>
     </body>
 </html>

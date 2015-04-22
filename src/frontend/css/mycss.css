@@ -14,17 +14,37 @@
 }
 
 .panel-transparent {
-    background: none;
+    /*background: none;*/
 }
 
 .panel-transparent .panel-body{
-    background: rgba(255,255,255, 0.5)!important;
+    /*background: rgba(255,255,255, 0.5)!important;*/
 }
 
 .list-group-transparent{
-    background: none;
+    /*background: none;*/
 }
 
 .list-group-transparent .list-group-item{
-    background: rgba(255,255,255, 0.5)!important;
+    /*background: rgba(255,255,255, 0.5)!important;*/
+}
+
+.marker {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    color: #FFFFFF;
+    position:absolute;
+}
+
+.markerchild {
+    position: relative;
+    left: -50%;
+    background: rgba(1,1,1,0.9);
+    padding: 4px;
+    border-radius: 10px;
+    cursor:pointer;
 }

@@ -212,6 +212,9 @@ var App = React.createClass({
         Tournaments:'tournament',
         Teams:'team',
     },
+    componentDidMount: function(){
+        window.globe.setOnSelect(this.onSelect);
+    },
     render: function(){
         var style ={
             position:'absolute',
@@ -232,7 +235,7 @@ var App = React.createClass({
         if(!e){
             if(self.isMounted())
                 self.setState(this.getInitialState());
-            window.glrenderer.updateTransfers([]);
+            window.globe.updateTransfers([]);
             return
         }
         $.getJSON("/"+this.staticURL[e.type]+'?name='+e.name, function(result){
@@ -247,7 +250,7 @@ var App = React.createClass({
                         transfers=result.transfers;
                         break;
                 }
-                window.glrenderer.updateTransfers(transfers);
+                window.globe.updateTransfers(transfers);
                 self.setState({selected:result});
             }
         });

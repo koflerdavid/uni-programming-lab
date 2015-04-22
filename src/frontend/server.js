@@ -62,6 +62,7 @@ app.get('/team', function (req, res) {
     var barce = {name:'Barce',uid:'Barce',pos:[2.173403, 41.385064]};
     var man = {name:'Manchester',uid:'man',pos:[-2.242631, 53.480759]};
     var ibk = {name:'Innsbruck',uid:'ibk',pos:[11.404102, 47.269212]};
+    var rapid = {name:'Wien',uid:'vie',pos:[16.373819, 48.208174]};
     res.send(JSON.stringify({
         name: name,
         trainer: 'Best trainer',
@@ -86,6 +87,11 @@ app.get('/team', function (req, res) {
             {
                 from: man,
                 to: ibk,
+                strength: 5,
+            },
+            {
+                from: ibk,
+                to: rapid,
                 strength: 5,
             }
         ]

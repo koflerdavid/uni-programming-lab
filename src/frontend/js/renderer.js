@@ -14,6 +14,8 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
     var globalScale = 50;
     var particles = null;
     var transferGroup = null;
+    var updateListener = null;
+    var teamLocs = [];
 
     function generateSphere(){
         var geometry = new THREE.SphereGeometry( globalScale-0.2, 32, 32 );
@@ -159,8 +161,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         //scene.add(generateCenters());
     }
 
-    function init(countries) {
-        container = document.getElementById( 'container' );
+    function init(countries,container) {
 
         camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
         camera.position.z = globalScale*4;
@@ -201,20 +202,65 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             particles.update();
         controls.update();
         renderer.render( scene, camera );
+        updateTeamLocations();
         stats.update();
     }
+    function initTeamLocations(transfers){
+        var teams = {};
+        transfers.forEach(function(t){
+            teams[t.from.name] = t.from;
+            teams[t.to.name] = t.to;
+        });
+        teamLocs = [];
+        Object.keys(teams).forEach(function(t){
+            teamLocs.push({
+                name:t,
+                uid:teams[t].uid,
+                pos:[0,0],
+                realpos:latlongToXYZ(teams[t].pos),
+                visible:true
+            });
+        });
+        console.log(teamLocs);
+    }
+    function updateTeamLocations(){
+        var tmp = new THREE.Vector3();
+        var camloc = new THREE.Vector3();
+        camloc.copy(camera.position).normalize();
+        teamLocs.forEach(function(t){
+            tmp.copy(t.realpos).normalize();
+            if(tmp.dot(camloc)<0.5){
+                t.visible = false;
+                return;
+            }
+            t.visible = true;
+            tmp.copy(t.realpos);
+            tmp.project(camera);
+            tmp.x = (tmp.x*windowHalfX)+windowHalfX;
+            tmp.y = -(tmp.y*windowHalfY)+windowHalfY;
+            t.pos[0]=tmp.x;
+            t.pos[1]=tmp.y;
+        });
+        if(updateListener!=null)
+            updateListener();
+    }
 
-    return function(countries){
+    return function(countries,domElement){
         var self = this;
-        self.updateTransfers = function(transfers){
+        self.updateTransfers = function(transfers,updListener){
             if(transferGroup!=null)
                 scene.remove(transferGroup);
             transferGroup = new THREE.Group();
             var curves = generateTransfers(transferGroup,transfers);
             particles = new Particles(transferGroup,curves);
             scene.add(transferGroup);
+            initTeamLocations(transfers);
+            updateListener = updListener;
         };
-        init(countries);
+        self.getTeamLocations = function(){
+            return teamLocs;
+        };
+        init(countries,domElement);
         animate();
     };
 })(THREE, Detector, Particles, Shaders, Stats);
