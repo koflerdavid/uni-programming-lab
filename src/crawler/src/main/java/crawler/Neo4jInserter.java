@@ -173,21 +173,23 @@ public class Neo4jInserter {
         return graphDb;
     }
 
-    public Set<Tournament> crawlPage(String uri) {
+    public Set<Tournament> crawlWebsite(String rootUri) {
         // Create the crawler. Doing it this way offers the opportunity to attach listeners
         // which are executed after na entity was parsed.
         PlayerCrawler playerCrawler = new PlayerCrawler();
         playerCrawler.onPlayerCrawled(this::createPlayer);
 
-        TeamCrawler teamCrawler = new TeamCrawler(playerCrawler);
+        TeamCrawler teamCrawler = new TeamCrawler();
         teamCrawler.onTeamCrawled(this::createTeam);
+        teamCrawler.onTeamCrawled((Team team) -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
 
-        TournamentCrawler tournamentCrawler = new TournamentCrawler(teamCrawler);
+        TournamentCrawler tournamentCrawler = new TournamentCrawler();
         tournamentCrawler.onTournamentCrawled(this::createTournament);
+        tournamentCrawler.onTournamentCrawled((Tournament tournament) -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
 
         MainCrawler crawler = new MainCrawler(tournamentCrawler);
 
-        HashSet<Tournament> tournaments = crawler.crawlMainPage(uri);
+        HashSet<Tournament> tournaments = crawler.crawlMainPage(rootUri);
 
         tournaments.forEach((Tournament tournament) ->
                         tournament.getTeams().forEach((Team team) ->
@@ -198,13 +200,13 @@ public class Neo4jInserter {
     }
 
     public static void main(String[] args) {
-        String uri = "http://www.soccerbase.com/tournaments/home.sd";
+        String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
         String dbPath = args[0];
 
         GraphDatabaseService graphDb = openGrapDb(dbPath);
         createSchema(graphDb);
 
         Neo4jInserter inserter = new Neo4jInserter(graphDb);
-        inserter.crawlPage(uri);
+        inserter.crawlWebsite(rootUri);
     }
 }

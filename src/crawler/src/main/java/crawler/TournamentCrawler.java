@@ -16,11 +16,6 @@ import java.util.function.Consumer;
 
 public class TournamentCrawler {
     private ArrayList<Consumer<Tournament>> onTournamentCrawledListeners = new ArrayList<>();
-    private TeamCrawler teamCrawler;
-
-	public TournamentCrawler(TeamCrawler teamCrawler) {
-        this.teamCrawler = teamCrawler;
-	}
 
 	public void crawlAllTournamentPages(Collection<Tournament> tournaments) {
         tournaments.forEach(this::crawlTournamentPage);
@@ -69,6 +64,10 @@ public class TournamentCrawler {
 				System.out.println(team.getName() + "\t" + team.getUri());
 			}
 
+            tournament.setTeams(teams);
+
+            emitTournamentCrawled(tournament);
+
 		} catch (IOException e) {
 			System.err.println("TournamentCrawler failed");
 			e.printStackTrace();
@@ -76,16 +75,10 @@ public class TournamentCrawler {
 			System.err.println("Sleep failed");
 			e.printStackTrace();
 		}
-
-		// Crawl squads for every tournament
-		tournament.setTeams(teams);
-		teamCrawler.crawlAllTeamPages(teams);
-
-        emitTournamentCrawled(tournament);
 	}
 
 	public static void main(String[] args) {
-		TournamentCrawler tc = new TournamentCrawler(new TeamCrawler(new PlayerCrawler()));
+		TournamentCrawler tc = new TournamentCrawler();
 		Tournament tournament = new Tournament(
 				"http://www.soccerbase.com/tournaments/tournament.sd?comp_id=1",
 				"Premier League");

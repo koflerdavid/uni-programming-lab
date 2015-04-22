@@ -57,7 +57,7 @@ public class MainCrawler {
 	}
 
 	public static void main(String[] args) {
-		MainCrawler mc = new MainCrawler(new TournamentCrawler(new TeamCrawler(new PlayerCrawler())));
+		MainCrawler mc = new MainCrawler(new TournamentCrawler());
 		String uri = "http://www.soccerbase.com/tournaments/home.sd";
 		mc.crawlMainPage(uri);
 	}

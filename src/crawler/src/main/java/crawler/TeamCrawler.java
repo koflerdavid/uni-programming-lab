@@ -18,11 +18,6 @@ import java.util.function.Consumer;
 
 public class TeamCrawler {
     private ArrayList<Consumer<Team>> onTeamCrawledListeners = new ArrayList<>();
-    private PlayerCrawler playerCrawler;
-
-    public TeamCrawler(PlayerCrawler playerCrawler) {
-        this.playerCrawler = playerCrawler;
-    }
 
     public void crawlAllTeamPages(Collection<Team> teams) {
         teams.forEach(this::crawlTeamPage);
@@ -41,7 +36,6 @@ public class TeamCrawler {
 	public void crawlTeamPage(Team team) {
 		String uri = team.getUri();
 		System.err.println("Crawling team page: " + team.getName());
-		LinkedHashSet<Player> players = new LinkedHashSet<Player>();
 
 		try {
 			Thread.sleep(Utils.HTTP_SLEEP);
@@ -158,6 +152,8 @@ public class TeamCrawler {
 			System.out.println(team.getName());
 			System.out.println("Players:");
 
+            LinkedHashSet<Player> players = new LinkedHashSet<Player>();
+
 			for (Element link : links) {
 				// Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),
 				// Utils.trim(link.text(), 35));
@@ -170,6 +166,8 @@ public class TeamCrawler {
 				System.out.println(player.getName() + "\t" + player.getUri());
 			}
 
+            team.setPlayers(players);
+
             emitTeamCrawled(team);
 
 		} catch (IOException e) {
@@ -179,14 +177,10 @@ public class TeamCrawler {
 			System.err.println("Sleep failed");
 			e.printStackTrace();
 		}
-
-		// Crawl players for every squad
-		team.setPlayers(players);
-		playerCrawler.crawlAllPlayerPages(players);
 	}
 
 	public static void main(String[] args) {
-		TeamCrawler tc = new TeamCrawler(new PlayerCrawler());
+		TeamCrawler tc = new TeamCrawler();
 		Team t = new Team(
 				"http://www.soccerbase.com/teams/team.sd?team_id=536",
 				"Aston Villa");
