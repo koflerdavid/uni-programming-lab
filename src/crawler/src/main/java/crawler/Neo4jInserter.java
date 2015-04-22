@@ -137,7 +137,7 @@ public class Neo4jInserter {
                 for (ConstraintDefinition definition : graphDb.schema().getConstraints(label)) {
                     if (definition.isConstraintType(ConstraintType.UNIQUENESS)) {
                         if (definition.getPropertyKeys().spliterator().getExactSizeIfKnown() == 1
-                                && "uid".equals(definition.getPropertyKeys().iterator().next())) {
+                                && "uri".equals(definition.getPropertyKeys().iterator().next())) {
                             uniqueConstraintOnUri = true;
                             break;
                         }
