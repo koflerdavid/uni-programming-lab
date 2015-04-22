@@ -56,35 +56,40 @@ public class TeamCrawler {
 			if (e.text().length() >= 14) {
 				team.setNickname(e.text().substring(14));
 			} else {
-
 				team.setNickname("");
 			}
+
 			System.out.println("Nickname: " + team.getNickname());
 
 			// Get ground name
 			e = it.next();
-			if (e.text().length() >= 7) {
+			if (e.text().indexOf("CAPACITY") > 7) {
 				team.setGround(e.text().substring(7,
 						e.text().indexOf("CAPACITY") - 1));
 			} else {
-				team.setGround("");
+				team.setGround(null);
 			}
+
 			System.out.println("Ground: " + team.getGround());
 
 			// Get Manager name + info
 			e = it.next();
-			if (e.text().length() >= 8 && e.text().indexOf("TEAM") >= 0) {
+			if (e.text().indexOf("TEAM") > 8) {
 				team.setTrainer(new Trainer(e.text().substring(8,
 						e.text().indexOf("TEAM") - 1)));
 			} else {
-				team.setTrainer(new Trainer());
+				team.setTrainer(null);
 			}
 
-			System.out.println("Trainer: " + team.getTrainer().getName());
-			e = it.next();
+            if (team.getTrainer() != null) {
+                System.out.println("Trainer: " + team.getTrainer().getName());
+            }
+
+            it.next();
+
 			do {
 				// Manager info
-				e = it.next();
+				it.next();
 			} while (!e.text().startsWith("Year Formed"));
 
 			// Get Year formed
@@ -152,7 +157,7 @@ public class TeamCrawler {
 			System.out.println(team.getName());
 			System.out.println("Players:");
 
-            LinkedHashSet<Player> players = new LinkedHashSet<Player>();
+            LinkedHashSet<Player> players = new LinkedHashSet<>();
 
 			for (Element link : links) {
 				// Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),

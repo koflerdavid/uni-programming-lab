@@ -40,15 +40,11 @@ public class Neo4jInserter {
                         " RETURN player", parameters)
                 .columnAs("player").next();
 
-        if (player.getTeam() != null) {
-            addPlayerToTeam(player.getTeam(), player);
-        }
-
         return nPlayer;
     }
 
     public Node createTeam(Team team) {
-        HashMap<String, Object> parameters = new HashMap<>(11);
+        HashMap<String, Object> parameters = new HashMap<>(12);
         parameters.put("uri", team.getUri());
         parameters.put("name", team.getName());
         parameters.put("nickname", team.getNickname());
@@ -60,17 +56,16 @@ public class Neo4jInserter {
         parameters.put("postcode", team.getPostCode());
         parameters.put("chairman", team.getChairman());
         parameters.put("ground", team.getGround());
+        parameters.put("trainer", team.getTrainer() != null ? team.getTrainer().getName() : null);
 
         Node nTeam = (Node) graphDb
                 .execute("MERGE (team : Team { uri: {uri} })" +
                         " SET team.name = {name}, team.nickname = {nickname}, team.website = {website}," +
                         "  team.yearFormed = {yearFormed}, team.address1 = {address1}, team.address1 = {address1}," +
                         "  team.address2 = {address2}, team.address3 = {address3}, team.postcode = {postcode}," +
-                        "  team.chairman = {chairman}, team.ground = {ground}" +
+                        "  team.chairman = {chairman}, team.ground = {ground}, team.trainer = {trainer}" +
                         " RETURN team", parameters)
                 .columnAs("team").next();
-
-        team.getTournaments().forEach((Tournament tournament) -> addTeamToTournament(tournament, team));
 
         return nTeam;
     }
@@ -88,8 +83,6 @@ public class Neo4jInserter {
                         " RETURN tournament", parameters)
                 .columnAs("tournament").next();
 
-        tournament.getTeams().forEach((Team team) -> addTeamToTournament(tournament, team));
-
         return nTournament;
     }
 
@@ -100,8 +93,10 @@ public class Neo4jInserter {
         parameters.put("teamUri", team.getUri());
 
         return (Relationship) graphDb
-                .execute("MATCH (tournament:Tournament), (team:Team)" +
-                        "  WHERE tournament.uri = {tournamentUri} AND team.uri = {teamUri}" +
+                .execute("MERGE (team:Team { uri: {teamUri} })" +
+                        "  ON CREATE SET team.name = {teamName}" +
+                        " MERGE (tournament:Tournament { uri: {tournamentUri} })" +
+                        "  ON CREATE SET tournament.name = {tournamentName}" +
                         " MERGE (team)-[participation:" + SoccerRelationshipTypes.IN_TOURNAMENT + "]->(tournament)" +
                         " RETURN participation", parameters)
                 .columnAs("participation").next();
@@ -182,19 +177,17 @@ public class Neo4jInserter {
         TeamCrawler teamCrawler = new TeamCrawler();
         teamCrawler.onTeamCrawled(this::createTeam);
         teamCrawler.onTeamCrawled((Team team) -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
+        teamCrawler.onTeamCrawled((Team team) -> team.getPlayers().forEach((Player player) -> addPlayerToTeam(team, player)));
 
         TournamentCrawler tournamentCrawler = new TournamentCrawler();
         tournamentCrawler.onTournamentCrawled(this::createTournament);
         tournamentCrawler.onTournamentCrawled((Tournament tournament) -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
+        tournamentCrawler.onTournamentCrawled((Tournament tournament) ->
+                tournament.getTeams().forEach((Team team) -> addTeamToTournament(tournament, team)));
 
         MainCrawler crawler = new MainCrawler(tournamentCrawler);
 
         HashSet<Tournament> tournaments = crawler.crawlMainPage(rootUri);
-
-        tournaments.forEach((Tournament tournament) ->
-                        tournament.getTeams().forEach((Team team) ->
-                                this.addTeamToTournament(tournament, team))
-        );
 
         return tournaments;
     }

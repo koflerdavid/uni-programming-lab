@@ -55,9 +55,11 @@ public class TournamentCrawler {
 			for (Element link : links) {
 				// Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),
 				// Utils.trim(link.text(), 35));
-                final Team team = new Team(link.attr("abs:href"), link.text());
-                team.getTournaments().add(tournament);
-                teams.add(team);
+                if (!link.text().isEmpty()) {
+                    final Team team = new Team(link.attr("abs:href"), link.text());
+                    team.getTournaments().add(tournament);
+                    teams.add(team);
+                }
 			}
 
 			for (Team team : teams) {
