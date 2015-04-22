@@ -161,7 +161,9 @@ public class TeamCrawler {
 			for (Element link : links) {
 				// Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),
 				// Utils.trim(link.text(), 35));
-				players.add(new Player(link.attr("abs:href"), link.text()));
+                final Player player = new Player(link.attr("abs:href"), link.text());
+                player.setTeam(team);
+                players.add(player);
 			}
 
 			for (Player player : players) {

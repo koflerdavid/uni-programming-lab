@@ -60,13 +60,14 @@ public class TournamentCrawler {
 			for (Element link : links) {
 				// Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),
 				// Utils.trim(link.text(), 35));
-				teams.add(new Team(link.attr("abs:href"), link.text()));
+                final Team team = new Team(link.attr("abs:href"), link.text());
+                team.getTournaments().add(tournament);
+                teams.add(team);
 			}
+
 			for (Team team : teams) {
 				System.out.println(team.getName() + "\t" + team.getUri());
 			}
-
-            emitTournamentCrawled(tournament);
 
 		} catch (IOException e) {
 			System.err.println("TournamentCrawler failed");
@@ -79,6 +80,8 @@ public class TournamentCrawler {
 		// Crawl squads for every tournament
 		tournament.setTeams(teams);
 		teamCrawler.crawlAllTeamPages(teams);
+
+        emitTournamentCrawled(tournament);
 	}
 
 	public static void main(String[] args) {
