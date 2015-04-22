@@ -85,14 +85,14 @@ public class PlayerCrawler {
 			}
 			System.out.println("Age: " + player.getAge());
 
-			// get birthdate
+			// get birthday
 			if (e.text().indexOf("(") >= 6) {
-				player.setBirthdate(e.text().substring(
-						e.text().indexOf("(") + 6, e.text().indexOf(")")));
+				player.setBirthday(e.text().substring(
+                        e.text().indexOf("(") + 6, e.text().indexOf(")")));
 			} else {
-				player.setBirthdate("");
+				player.setBirthday("");
 			}
-			System.out.println("Date of Birth: " + player.getBirthdate());
+			System.out.println("Date of Birth: " + player.getBirthday());
 
 			// get height
 			e = it.next();

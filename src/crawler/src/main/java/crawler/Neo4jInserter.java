@@ -26,7 +26,7 @@ public class Neo4jInserter {
         parameters.put("name", player.getName());
         parameters.put("age", player.getAge());
         parameters.put("uri", player.getUri());
-        parameters.put("birthday", player.getBirthdate());
+        parameters.put("birthday", player.getBirthday());
         parameters.put("birthplace", player.getBirthplace());
         parameters.put("height", player.getHeight());
         parameters.put("weight", player.getWeight());
