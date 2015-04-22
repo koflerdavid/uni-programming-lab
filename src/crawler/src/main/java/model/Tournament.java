@@ -11,12 +11,11 @@ public class Tournament {
 	public Tournament(String uri, String name, LinkedHashSet<Team> teams) {
 		this.uri = uri;
 		this.name = name;
-		this.teams = teams;
+		setTeams(teams);
 	}
 
 	public Tournament(String uri, String name) {
-		this.uri = uri;
-		this.name = name;
+        this(uri, name, null);
 	}
 
 	public String getUri() {
@@ -48,7 +47,7 @@ public class Tournament {
 	}
 
 	public void setTeams(LinkedHashSet<Team> teams) {
-		this.teams = teams;
+		this.teams = teams != null ? teams : new LinkedHashSet<>();
 	}
 
 	@Override
@@ -81,5 +80,4 @@ public class Tournament {
 			return false;
 		return true;
 	}
-
 }
