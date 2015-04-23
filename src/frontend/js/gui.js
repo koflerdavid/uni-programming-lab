@@ -221,6 +221,7 @@ var App = React.createClass({
             right:'0px',
             margin:'20px',
             width:'20%',
+            zIndex:1
         }
         return (
         <div style={style}>

@@ -6,7 +6,7 @@ var Particles = function(scene,curves) {
     self.init = function(){
         var material = new THREE.PointCloudMaterial({
             color: 0xff0000,
-            size:10,
+            size:4,
             blending: THREE.AdditiveBlending,
             transparent:true,
             depthWrite:false,
