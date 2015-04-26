@@ -1,17 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>three.js webgl - geometry - vertex colors</title>
+        <title>Football transfers visualization</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
         <link href="bower_components/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
         <link href="css/mycss.css" rel="stylesheet">
-        <style>
-            body {
-                margin: 0px;
-                overflow: hidden;
-            }
-        </style>
     </head>
     <body>
 
@@ -26,7 +20,6 @@
         <script src="bower_components/threejs/examples/js/libs/stats.min.js"></script>
         <script src="bower_components/threejs/examples/js/Detector.js"></script>
         <script src="js/lib/OrbitControls.js"></script>
-        <script src="data/countries.geo.json"></script>
         <script src="js/shaders.js"></script>
         <script src="js/particles.js"></script>
         <script src="js/renderer.js"></script>
@@ -69,42 +62,11 @@
             return countries;
         }
 
-        function findCountry(name){
-            for(var i=0;i<countries.length;i++){
-                if(countries[i].name==name)
-                    return countries[i];
-            }
-        }
-        
-        function generateTransfer(from,to){
-            return {
-                from:{pos:from},
-                to:{pos:to},
-                strength:Math.random()*10|0,
-                isIngoing:Math.random()>0.5
-            }
-        }
-
-        function generateRandomTransfers(countries){
-            var transfers = [];
-            var transfernum = 10;
-            for(var i=0;i<transfernum;i++){
-                var countryA = countries[Math.random()*countries.length | 0];
-                var countryB = countries[Math.random()*countries.length | 0];
-                if(countryA==countryB)
-                    continue;
-                transfers.push(generateTransfer(countryA.center,countryB.center));
-            }
-            var mid = findCountry('Austria').center;
-            if(false)
-                for(var i=0;i<countries.length/4;i++)
-                    transfers.push(generateTransfer(mid,countries[i].center));
-            return transfers;
-        }
-
-        var countries = processCountries(COUNTRY_DATA);
-        var transfers = generateRandomTransfers(countries);
-        var globe = new Globe(countries,$('#gl')[0],$('#overlay'));
+        var globe = new Globe($('#gl')[0],$('#overlay'));
+        $.getJSON('/data/countries.geo.json', function(result){
+            var countries = processCountries(result);
+            globe.setCountries(countries);
+        });
         </script>
     </body>
 </html>

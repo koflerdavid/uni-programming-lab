@@ -52,7 +52,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         return new THREE.Vector3(x,y,z);
     }
 
-    function generateBorders(contries) {
+    function generateBorders(countries) {
         var material = new THREE.LineBasicMaterial({color: 0xffffff});
 
         var geometry = new THREE.Geometry();
@@ -74,18 +74,6 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             }
         }
         return new THREE.Line( geometry, material, THREE.LinePieces );
-    }
-
-    function generateCenters(contries) {
-        var material = new THREE.PointCloudMaterial({color: 0xffffff});
-        var geometry = new THREE.Geometry();
-        var verts = geometry.vertices;
-        var ctrs = countries;
-        for(var i=0;i<ctrs.length;i++){
-            var vec = latlongToXYZ(ctrs[i].center);
-            verts.push(vec);
-        }
-        return new THREE.PointCloud( geometry, material );
     }
 
     function midPoint(from,to){
@@ -154,14 +142,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         return curves;
     }
 
-    function addToScene(countries, scene) {
-        scene.add(generateBorders(countries));
-        scene.add(generateSphere());
-        scene.add(generateAtmosphere());
-        //scene.add(generateCenters());
-    }
-
-    function init(countries,container) {
+    function init(container) {
 
         camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
         camera.position.z = globalScale*4;
@@ -173,7 +154,8 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         controls.zoomInfluencesRotateSpeed = true;
 
         scene = new THREE.Scene();
-        addToScene(countries, scene);
+        scene.add(generateSphere());
+        scene.add(generateAtmosphere());
 
         renderer = new THREE.WebGLRenderer( { antialias: true } );
         renderer.setClearColor( 0x111111 );
@@ -224,7 +206,6 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
                 visible:true
             });
         });
-        console.log(teamLocs);
     }
     function updateTeamLocations(){
         var tmp = new THREE.Vector3();
@@ -248,7 +229,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             updateListener();
     }
 
-    return function(countries,domElement){
+    return function(domElement){
         var self = this;
         self.updateTransfers = function(transfers,updListener){
             if(transferGroup!=null)
@@ -263,7 +244,10 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         self.getTeamLocations = function(){
             return teamLocs;
         };
-        init(countries,domElement);
+        self.setCountries = function(countries){
+            scene.add(generateBorders(countries));
+        };
+        init(domElement);
         animate();
     };
 })(THREE, Detector, Particles, Shaders, Stats);
