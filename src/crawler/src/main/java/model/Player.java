@@ -12,7 +12,7 @@ public class Player {
 	private String height;
 	private String weight;
 	private String birthplace;
-	private String birthdate;
+	private String birthday;
 	private String nationality;
 	private String dateSigned;
 	private String fee;
@@ -111,12 +111,12 @@ public class Player {
 		this.number = number;
 	}
 
-	public String getBirthdate() {
-		return birthdate;
+	public String getBirthday() {
+		return birthday;
 	}
 
-	public void setBirthdate(String birthdate) {
-		this.birthdate = birthdate;
+	public void setBirthday(String birthday) {
+		this.birthday = birthday;
 	}
 
 	public String getPosition() {

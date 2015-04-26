@@ -1,11 +1,12 @@
 package crawler;
 
 public class Utils {
-	public static int HTTP_SLEEP = 10000;
+	public static int HTTP_SLEEP = 3000;
+    public static int HTTP_TIMEOUT = 3000;
 
 	// C-style printf
-	public static void print(String msg, Object... args) {
-		System.out.println(String.format(msg, args));
+	public static void println(String msg, Object... args) {
+		System.out.printf(msg + '\n', args);
 	}
 
 	public static String trim(String s, int width) {

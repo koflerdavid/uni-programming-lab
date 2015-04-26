@@ -1,6 +1,7 @@
 package crawler;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 import model.Tournament;
@@ -11,29 +12,34 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class MainCrawler {
+    private TournamentCrawler tournamentCrawler;
 
-	private void crawlMainPage(String uri) {
+    public MainCrawler(TournamentCrawler tournamentCrawler) {
+        this.tournamentCrawler = tournamentCrawler;
+    }
+
+    public HashSet<Tournament> crawlMainPage(String uri) {
 		LinkedHashSet<Tournament> tournaments = new LinkedHashSet<Tournament>();
 
 		try {
-
 			// Get HTML page from URI
 			Document doc = Jsoup
 					.connect(uri)
 					.userAgent(
 							"Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0")
-					.timeout(3000).get();
+					.timeout(Utils.HTTP_TIMEOUT).get();
 
 			// Get all links associated to tournaments
 			Elements links = doc
 					.select("a[href*=/tournaments/tournament.sd?comp_id]");
-			Utils.print("\nTournaments: (%d)", links.size());
+			Utils.println("\nTournaments: (%d)", links.size());
 			for (Element link : links) {
-				// Utils.print(" * a: <%s>  (%s)", link.attr("abs:href"),
+				// Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),
 				// Utils.trim(link.text(), 35));
 				tournaments.add(new Tournament(link.attr("abs:href"), link
 						.text()));
 			}
+
 			for (Tournament tournament : tournaments) {
 				System.out.println(tournament.getName() + "\t"
 						+ tournament.getUri());
@@ -45,20 +51,14 @@ public class MainCrawler {
 		}
 
 		// Crawl all single tournaments
-		TournamentCrawler tc = new TournamentCrawler(tournaments);
-		tc.crawlAllTournamentPages();
+		tournamentCrawler.crawlAllTournamentPages(tournaments);
 
-		// Print crawled info
-
-		// serialize fm
-
+		return tournaments;
 	}
 
 	public static void main(String[] args) {
-		MainCrawler mc = new MainCrawler();
+		MainCrawler mc = new MainCrawler(new TournamentCrawler());
 		String uri = "http://www.soccerbase.com/tournaments/home.sd";
 		mc.crawlMainPage(uri);
-
 	}
-
 }

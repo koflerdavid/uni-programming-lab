@@ -1,12 +1,7 @@
 package crawler;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-
 import model.Player;
 import model.Team;
-import model.Tournament;
 import model.Trainer;
 
 import org.jsoup.Jsoup;
@@ -14,30 +9,33 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.function.Consumer;
+
 public class TeamCrawler {
-	private Tournament tournament;
-	private LinkedHashSet<Team> teams;
+    private ArrayList<Consumer<Team>> onTeamCrawledListeners = new ArrayList<>();
 
-	public TeamCrawler(LinkedHashSet<Team> teams, Tournament tournament) {
-		this.teams = teams;
-		this.setTournament(tournament);
+    public void crawlAllTeamPages(Collection<Team> teams) {
+        teams.forEach(this::crawlTeamPage);
 	}
 
-	public TeamCrawler() {
-		// TODO Auto-generated constructor stub
-	}
+    public void onTeamCrawled(Consumer<Team> listener) {
+        onTeamCrawledListeners.add(listener);
+    }
 
-	public void crawlAllTeamPages() {
-		for (Team team : teams) {
-			crawlTeamPage(team);
-		}
-
-	}
+    protected void emitTeamCrawled(Team team) {
+        for (Consumer<Team> listener : onTeamCrawledListeners) {
+            listener.accept(team);
+        }
+    }
 
 	public void crawlTeamPage(Team team) {
 		String uri = team.getUri();
 		System.err.println("Crawling team page: " + team.getName());
-		LinkedHashSet<Player> players = new LinkedHashSet<Player>();
 
 		try {
 			Thread.sleep(Utils.HTTP_SLEEP);
@@ -46,7 +44,7 @@ public class TeamCrawler {
 					.connect(uri)
 					.userAgent(
 							"Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0")
-					.timeout(3000).get();
+					.timeout(Utils.HTTP_TIMEOUT).get();
 
 			// Get all the data by iterating through the club info box
 			Elements clubInfo = doc.getElementsByTag("tr");
@@ -58,35 +56,40 @@ public class TeamCrawler {
 			if (e.text().length() >= 14) {
 				team.setNickname(e.text().substring(14));
 			} else {
-
 				team.setNickname("");
 			}
+
 			System.out.println("Nickname: " + team.getNickname());
 
 			// Get ground name
 			e = it.next();
-			if (e.text().length() >= 7) {
+			if (e.text().indexOf("CAPACITY") > 7) {
 				team.setGround(e.text().substring(7,
 						e.text().indexOf("CAPACITY") - 1));
 			} else {
-				team.setGround("");
+				team.setGround(null);
 			}
+
 			System.out.println("Ground: " + team.getGround());
 
 			// Get Manager name + info
 			e = it.next();
-			if (e.text().length() >= 8 && e.text().indexOf("TEAM") >= 0) {
+			if (e.text().indexOf("TEAM") > 8) {
 				team.setTrainer(new Trainer(e.text().substring(8,
 						e.text().indexOf("TEAM") - 1)));
 			} else {
-				team.setTrainer(new Trainer());
+				team.setTrainer(null);
 			}
 
-			System.out.println("Trainer: " + team.getTrainer().getName());
-			e = it.next();
+            if (team.getTrainer() != null) {
+                System.out.println("Trainer: " + team.getTrainer().getName());
+            }
+
+            it.next();
+
 			do {
 				// Manager info
-				e = it.next();
+				it.next();
 			} while (!e.text().startsWith("Year Formed"));
 
 			// Get Year formed
@@ -153,14 +156,24 @@ public class TeamCrawler {
 					.select("a[href*=/players/player.sd?player_id]");
 			System.out.println(team.getName());
 			System.out.println("Players:");
+
+            LinkedHashSet<Player> players = new LinkedHashSet<>();
+
 			for (Element link : links) {
-				// Utils.print(" * a: <%s>  (%s)", link.attr("abs:href"),
+				// Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),
 				// Utils.trim(link.text(), 35));
-				players.add(new Player(link.attr("abs:href"), link.text()));
+                final Player player = new Player(link.attr("abs:href"), link.text());
+                player.setTeam(team);
+                players.add(player);
 			}
+
 			for (Player player : players) {
 				System.out.println(player.getName() + "\t" + player.getUri());
 			}
+
+            team.setPlayers(players);
+
+            emitTeamCrawled(team);
 
 		} catch (IOException e) {
 			System.err.println("TeamCrawler failed");
@@ -169,11 +182,6 @@ public class TeamCrawler {
 			System.err.println("Sleep failed");
 			e.printStackTrace();
 		}
-
-		// Crawl players for every squad
-		team.setPlayers(players);
-		PlayerCrawler pc = new PlayerCrawler(players, team);
-		pc.crawlAllPlayerPages();
 	}
 
 	public static void main(String[] args) {
@@ -182,14 +190,5 @@ public class TeamCrawler {
 				"http://www.soccerbase.com/teams/team.sd?team_id=536",
 				"Aston Villa");
 		tc.crawlTeamPage(t);
-
-	}
-
-	public Tournament getTournament() {
-		return tournament;
-	}
-
-	public void setTournament(Tournament tournament) {
-		this.tournament = tournament;
 	}
 }

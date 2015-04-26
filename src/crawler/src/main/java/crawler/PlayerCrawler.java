@@ -1,9 +1,5 @@
 package crawler;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-
 import model.Player;
 import model.Team;
 import model.Transfer;
@@ -13,28 +9,36 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.function.Consumer;
+
 public class PlayerCrawler {
-	private Team team;
-	private LinkedHashSet<Player> players;
+    private ArrayList<Consumer<Player>> onPlayerCrawledListeners = new ArrayList<>();
 
-	public PlayerCrawler(LinkedHashSet<Player> players, Team team) {
-		this.players = players;
-		this.setTeam(team);
+    public void onPlayerCrawled(Consumer<Player> listener) {
+        onPlayerCrawledListeners.add(listener);
+    }
+
+    protected void emitPlayerCrawled(Player player) {
+        for (Consumer<Player> listener : onPlayerCrawledListeners) {
+            listener.accept(player);
+        }
+    }
+
+	public void crawlAllPlayerPages(Collection<Player> players) {
+        players.forEach(this::crawlPlayerPage);
 	}
 
-	public PlayerCrawler() {
-
-	}
-
-	public void crawlAllPlayerPages() {
-		for (Player player : players) {
-			crawlPlayerPage(player);
-		}
-	}
-
-	private void crawlPlayerPage(Player player) {
+	public void crawlPlayerPage(Player player) {
 		String uri = player.getUri();
 		LinkedHashSet<Transfer> transferHistory = new LinkedHashSet<Transfer>();
+        SimpleDateFormat dateParser = new SimpleDateFormat("dd-MMM-yyyy");
 
 		try {
 			Thread.sleep(Utils.HTTP_SLEEP);
@@ -43,7 +47,7 @@ public class PlayerCrawler {
 					.connect(uri)
 					.userAgent(
 							"Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0")
-					.timeout(3000).get();
+					.timeout(Utils.HTTP_TIMEOUT).get();
 
 			// Get all the data by iterating through the player info
 			Elements playerInfo = doc.getElementsByTag("tr");
@@ -56,7 +60,7 @@ public class PlayerCrawler {
 
 			// get player number
 			Element e = it.next();
-			if (e.text().indexOf(".") >= 0) {
+			if (e.text().contains(".")) {
 				player.setNumber(Integer.parseInt(e.text().substring(0,
 						e.text().indexOf("."))));
 			} else {
@@ -81,18 +85,18 @@ public class PlayerCrawler {
 			}
 			System.out.println("Age: " + player.getAge());
 
-			// get birthdate
+			// get birthday
 			if (e.text().indexOf("(") >= 6) {
-				player.setBirthdate(e.text().substring(
-						e.text().indexOf("(") + 6, e.text().indexOf(")")));
+				player.setBirthday(e.text().substring(
+                        e.text().indexOf("(") + 6, e.text().indexOf(")")));
 			} else {
-				player.setBirthdate("");
+				player.setBirthday("");
 			}
-			System.out.println("Date of Birth: " + player.getBirthdate());
+			System.out.println("Date of Birth: " + player.getBirthday());
 
 			// get height
 			e = it.next();
-			if (e.text().indexOf("(") >= 0) {
+			if (e.text().contains("(")) {
 				player.setHeight(e.text().substring(e.text().indexOf("(") + 1,
 						e.text().indexOf(")")));
 			} else {
@@ -102,7 +106,7 @@ public class PlayerCrawler {
 
 			// get weight
 			e = it.next();
-			if (e.text().indexOf("(") >= 0) {
+			if (e.text().contains("(")) {
 				player.setWeight(e.text().substring(e.text().indexOf("(") + 1,
 						e.text().indexOf(")")));
 			} else {
@@ -147,8 +151,8 @@ public class PlayerCrawler {
 			System.out.println("Fee: " + player.getFee());
 
 			// Get transfer history
-			e = it.next();
-			e = it.next();
+			it.next();
+			it.next();
 			e = it.next();
 			System.out.println("Transfer History of " + player.getName());
 			do {
@@ -166,19 +170,19 @@ public class PlayerCrawler {
 				String from = Utils.trim(
 						e.text().substring(e.text().indexOf(",") - 6), 11);
 				System.out.println("\tDate Joined: " + from);
-				transfer.setFrom(from);
+				transfer.setFrom(dateParser.parse(from));
 
 				// get date to (empty if actual club)
 				String to = Utils.trim(
 						e.text().substring(e.text().lastIndexOf(", ") - 6), 11);
 				if (to.equals(from)) {
-					transfer.setTo("");
+					transfer.setTo(null);
 				} else {
-					transfer.setTo(to);
+					transfer.setTo(dateParser.parse(to));
 				}
 				System.out.println("\tDate Left: " + transfer.getTo());
 
-				if (e.text().indexOf("Loan") >= 0) {
+				if (e.text().contains("Loan")) {
 					transfer.setFee("Loan");
 					System.out.println("\tFee: Loan");
 				} else {
@@ -194,15 +198,19 @@ public class PlayerCrawler {
 
 			player.setTransferHistory(transferHistory);
 
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+            emitPlayerCrawled(player);
 
-	}
+        } catch (IOException e) {
+            System.err.println("TournamentCrawler failed");
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            System.err.println("Sleep failed");
+            e.printStackTrace();
+        } catch (ParseException e) {
+            System.err.println("Invalid date format");
+            e.printStackTrace();
+        }
+    }
 
 	public static void main(String[] args) {
 		PlayerCrawler pc = new PlayerCrawler();
@@ -213,14 +221,5 @@ public class PlayerCrawler {
 				"http://www.soccerbase.com/players/player.sd?player_id=39937",
 				"Gerard Pique");
 		pc.crawlPlayerPage(p);
-
-	}
-
-	public Team getTeam() {
-		return team;
-	}
-
-	public void setTeam(Team team) {
-		this.team = team;
 	}
 }
