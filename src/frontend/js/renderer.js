@@ -126,7 +126,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             var normal = from.clone();
             normal.sub(to);
             var mid = slerp(from,to,0.5);
-            mid.multiplyScalar(globalScale*(1.1+(normal.length()/globalScale)/5));
+            mid.multiplyScalar(globalScale*(1.0+(normal.length()/globalScale)/5));
             var anch1 = mid.clone();
             anch1.add(normal.clone().multiplyScalar(0.5));
             var anch2 = mid.clone();
@@ -166,8 +166,11 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
         camera.position.z = globalScale*4;
         controls = new THREE.OrbitControls(camera,container);
-        controls.rotateSpeed = 0.3;
+        controls.rotateSpeed = 0.5;
         controls.noPan = true;
+        controls.minDistance = globalScale*1.1;
+        controls.maxDistance = globalScale*4;
+        controls.zoomInfluencesRotateSpeed = true;
 
         scene = new THREE.Scene();
         addToScene(countries, scene);
