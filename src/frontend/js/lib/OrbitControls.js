@@ -48,6 +48,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 	// Set to true to disable this control
 	this.noRotate = false;
 	this.rotateSpeed = 1.0;
+	this.zoomInfluencesRotateSpeed = false;
 
 	// Set to true to disable this control
 	this.noPan = false;
@@ -302,6 +303,9 @@ THREE.OrbitControls = function ( object, domElement ) {
 		phi = Math.max( EPS, Math.min( Math.PI - EPS, phi ) );
 
 		var radius = offset.length() * scale;
+		if(this.zoomInfluencesRotateSpeed){
+		    this.rotateSpeed *= scale;
+		}
 
 		// restrict radius to be between desired limits
 		radius = Math.max( this.minDistance, Math.min( this.maxDistance, radius ) );
@@ -686,7 +690,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	}
 
-	//this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
+	this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
 	this.domElement.addEventListener( 'mousedown', onMouseDown, false );
 	this.domElement.addEventListener( 'mousewheel', onMouseWheel, false );
 	this.domElement.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); // firefox
