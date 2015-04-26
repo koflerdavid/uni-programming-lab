@@ -14,7 +14,6 @@
             <div id="overlay"></div>
         </div>
         <script src="bower_components/react/react.js"></script>
-        <script src="bower_components/react/JSXTransformer.js"></script>
         <script src="bower_components/jquery/dist/jquery.js"></script>
         <script src="bower_components/threejs/build/three.js"></script>
         <script src="bower_components/threejs/examples/js/libs/stats.min.js"></script>
@@ -25,9 +24,7 @@
         <script src="js/renderer.js"></script>
         <script src="js/overlay.js"></script>
         <script src="js/globe.js"></script>
-        <script src="js/gui.js" type="text/jsx"></script>
         <script>
-
         function processCountries(data){
             var countries = [];
             var ctrs = data.features;
@@ -68,6 +65,7 @@
             globe.setCountries(countries);
         });
         </script>
+        <script src="js/gui.js"></script>
     </body>
 </html>
 
