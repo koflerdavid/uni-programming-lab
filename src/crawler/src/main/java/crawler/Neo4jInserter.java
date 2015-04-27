@@ -4,9 +4,6 @@ import model.Player;
 import model.Team;
 import model.Tournament;
 import org.neo4j.graphdb.*;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
-import org.neo4j.graphdb.schema.ConstraintDefinition;
-import org.neo4j.graphdb.schema.ConstraintType;
 
 import java.util.*;
 
@@ -122,34 +119,6 @@ public class Neo4jInserter {
                 .columnAs("membership").next();
     }
 
-    public static void createSchema(GraphDatabaseService graphDb) {
-        try (Transaction tx = graphDb.beginTx()) {
-            // Add a constraint for uniqueness of "uri" on each label
-            for (String labelName : Arrays.asList("Player", "Team", "Tournament", "Trainer")) {
-                Label label = DynamicLabel.label(labelName);
-                boolean uniqueConstraintOnUri = false;
-
-                for (ConstraintDefinition definition : graphDb.schema().getConstraints(label)) {
-                    if (definition.isConstraintType(ConstraintType.UNIQUENESS)) {
-                        if (definition.getPropertyKeys().spliterator().getExactSizeIfKnown() == 1
-                                && "uri".equals(definition.getPropertyKeys().iterator().next())) {
-                            uniqueConstraintOnUri = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!uniqueConstraintOnUri) {
-                    graphDb.schema()
-                            .constraintFor(label)
-                            .assertPropertyIsUnique("uri").create();
-                }
-            }
-
-            tx.success();
-        }
-    }
-
     public Set<Tournament> crawlWebsite(String rootUri) {
         // Create the crawler. Doing it this way offers the opportunity to attach listeners
         // which are executed after na entity was parsed.
@@ -179,7 +148,7 @@ public class Neo4jInserter {
         String dbPath = args[0];
 
         GraphDatabaseService graphDb = Neo4jHelper.openGrapDb(dbPath);
-        createSchema(graphDb);
+        Neo4jHelper.createSchema(graphDb);
 
         Neo4jInserter inserter = new Neo4jInserter(graphDb);
         inserter.crawlWebsite(rootUri);
