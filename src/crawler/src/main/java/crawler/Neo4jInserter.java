@@ -150,24 +150,6 @@ public class Neo4jInserter {
         }
     }
 
-    public static GraphDatabaseService openGrapDb(String dbPath) {
-        final GraphDatabaseService graphDb = new GraphDatabaseFactory()
-                .newEmbeddedDatabaseBuilder(dbPath)
-                .newGraphDatabase();
-
-        // Registers a shutdown hook for the Neo4j instance so that it
-        // shuts down nicely when the VM exits (even if you "Ctrl-C" the
-        // running application).
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                graphDb.shutdown();
-            }
-        });
-
-        return graphDb;
-    }
-
     public Set<Tournament> crawlWebsite(String rootUri) {
         // Create the crawler. Doing it this way offers the opportunity to attach listeners
         // which are executed after na entity was parsed.
@@ -196,7 +178,7 @@ public class Neo4jInserter {
         String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
         String dbPath = args[0];
 
-        GraphDatabaseService graphDb = openGrapDb(dbPath);
+        GraphDatabaseService graphDb = Neo4jHelper.openGrapDb(dbPath);
         createSchema(graphDb);
 
         Neo4jInserter inserter = new Neo4jInserter(graphDb);
