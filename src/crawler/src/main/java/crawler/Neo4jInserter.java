@@ -19,8 +19,9 @@ public class Neo4jInserter {
     }
 
     public Node createPlayer(Player player) {
-        HashMap<String, Object> parameters = new HashMap<>(8);
+        HashMap<String, Object> parameters = new HashMap<>(9);
         parameters.put("name", player.getName());
+        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(player.getName(), player.getNationality())));
         parameters.put("age", player.getAge());
         parameters.put("uri", player.getUri());
         parameters.put("birthday", player.getBirthday());
@@ -30,7 +31,7 @@ public class Neo4jInserter {
         parameters.put("nationality", player.getNationality());
 
         Node nPlayer = (Node) graphDb
-                .execute("MERGE (player : Player { uri: {uri} })" +
+                .execute("MERGE (player : Player { uri: {uri}, slug: {slug} })" +
                         " SET player.name = {name}, player.age = {age}, player.birthday = {birthday}," +
                         "  player.birthplace = {birthplace}, player.height = {height}, player.weight = {weight}," +
                         "  player.nationality = {nationality}" +
@@ -41,9 +42,10 @@ public class Neo4jInserter {
     }
 
     public Node createTeam(Team team) {
-        HashMap<String, Object> parameters = new HashMap<>(12);
+        HashMap<String, Object> parameters = new HashMap<>(13);
         parameters.put("uri", team.getUri());
         parameters.put("name", team.getName());
+        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(team.getName(), Integer.toString(team.getYearFormed()))));
         parameters.put("nickname", team.getNickname());
         parameters.put("website", team.getWebsite());
         parameters.put("yearFormed", team.getYearFormed());
@@ -56,7 +58,7 @@ public class Neo4jInserter {
         parameters.put("trainer", team.getTrainer() != null ? team.getTrainer().getName() : null);
 
         Node nTeam = (Node) graphDb
-                .execute("MERGE (team : Team { uri: {uri} })" +
+                .execute("MERGE (team : Team { uri: {uri}, slug: {slug} })" +
                         " SET team.name = {name}, team.nickname = {nickname}, team.website = {website}," +
                         "  team.yearFormed = {yearFormed}, team.address1 = {address1}, team.address1 = {address1}," +
                         "  team.address2 = {address2}, team.address3 = {address3}, team.postcode = {postcode}," +
@@ -68,14 +70,15 @@ public class Neo4jInserter {
     }
 
     public Node createTournament(Tournament tournament) {
-        HashMap<String, Object> parameters = new HashMap<>(3);
+        HashMap<String, Object> parameters = new HashMap<>(4);
 
         parameters.put("name", tournament.getName());
+        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(tournament.getName(), tournament.getCountry())));
         parameters.put("uri", tournament.getUri());
         parameters.put("country", tournament.getCountry());
 
         Node nTournament = (Node) graphDb
-                .execute("MERGE (tournament : Tournament { uri: {uri} })" +
+                .execute("MERGE (tournament : Tournament { uri: {uri}, slug: {slug} })" +
                         " SET tournament.name = {name}, tournament.country = {country}" +
                         " RETURN tournament", parameters)
                 .columnAs("tournament").next();
@@ -121,7 +124,7 @@ public class Neo4jInserter {
 
     public Set<Tournament> crawlWebsite(String rootUri) {
         // Create the crawler. Doing it this way offers the opportunity to attach listeners
-        // which are executed after na entity was parsed.
+        // which are executed after an entity was parsed.
         PlayerCrawler playerCrawler = new PlayerCrawler();
         playerCrawler.onPlayerCrawled(this::createPlayer);
 
