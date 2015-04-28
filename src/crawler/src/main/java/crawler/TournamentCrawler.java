@@ -47,9 +47,8 @@ public class TournamentCrawler {
 							"Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0")
 					.timeout(Utils.HTTP_TIMEOUT).get();
 
-			// Get name of the tournament
-			// tournamentName = doc.select("h1").text();
-			// System.out.println(tournamentName);
+            tournament.setName(doc.getElementsByTag("h1").text());
+            System.out.println("Name: " + tournament.getName());
 
 			// Get all links associated to the teams of the tournament
 			Elements links = doc.select("a[href*=/teams/team.sd?team_id]");
