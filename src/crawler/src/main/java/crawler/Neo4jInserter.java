@@ -3,10 +3,8 @@ package crawler;
 import model.Player;
 import model.Team;
 import model.Tournament;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.graphdb.*;
+import org.neo4j.helpers.collection.IteratorUtil;
 
 import java.io.IOException;
 import java.util.*;
@@ -96,14 +94,16 @@ public class Neo4jInserter {
         parameters.put("tournamentUri", tournament.getUri());
         parameters.put("teamUri", team.getUri());
 
-        return (Relationship) graphDb
+        ResourceIterator<Relationship> results = graphDb
                 .execute("MERGE (team:Team { uri: {teamUri} })" +
                         "  ON CREATE SET team.name = {teamName}" +
                         " MERGE (tournament:Tournament { uri: {tournamentUri} })" +
                         "  ON CREATE SET tournament.name = {tournamentName}" +
                         " MERGE (team)-[participation:" + SoccerRelationshipTypes.IN_TOURNAMENT + "]->(tournament)" +
                         " RETURN participation", parameters)
-                .columnAs("participation").next();
+                .columnAs("participation");
+
+        return IteratorUtil.singleOrNull(results);
     }
 
     public Relationship addPlayerToTeam(Team team, Player player) {
@@ -116,30 +116,32 @@ public class Neo4jInserter {
         parameters.put("fee", player.getFee());
         parameters.put("number", player.getNumber());
 
-        return (Relationship) graphDb
+        ResourceIterator<Relationship> results = graphDb
                 .execute("MATCH (team:Team), (player:Player)" +
                         "  WHERE team.uri = {teamUri} AND player.uri = {playerUri}" +
                         " MERGE (team)-[membership:" + SoccerRelationshipTypes.CURRENT_TEAM + "]-(player)" +
                         "  SET membership.contractSigned = {contractSigned}, membership.fee = {fee}," +
                         "   membership.number = {number}, membership.position = {position}" +
                         " RETURN membership", parameters)
-                .columnAs("membership").next();
+                .columnAs("membership");
+
+        return IteratorUtil.singleOrNull(results);
     }
 
     private TournamentCrawler getTournamentCrawler(TeamCrawler teamCrawler) {
         TournamentCrawler tournamentCrawler = new TournamentCrawler();
         tournamentCrawler.onTournamentCrawled(this::createTournament);
-        tournamentCrawler.onTournamentCrawled((Tournament tournament) -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
-        tournamentCrawler.onTournamentCrawled((Tournament tournament) ->
-                tournament.getTeams().forEach((Team team) -> addTeamToTournament(tournament, team)));
+        tournamentCrawler.onTournamentCrawled(tournament -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
+        tournamentCrawler.onTournamentCrawled(tournament ->
+                tournament.getTeams().forEach(team -> addTeamToTournament(tournament, team)));
         return tournamentCrawler;
     }
 
     private TeamCrawler getTeamCrawler(PlayerCrawler playerCrawler) {
         TeamCrawler teamCrawler = new TeamCrawler();
         teamCrawler.onTeamCrawled(this::createTeam);
-        teamCrawler.onTeamCrawled((Team team) -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
-        teamCrawler.onTeamCrawled((Team team) -> team.getPlayers().forEach((Player player) -> addPlayerToTeam(team, player)));
+        teamCrawler.onTeamCrawled(team -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
+        teamCrawler.onTeamCrawled(team -> team.getPlayers().forEach(player -> addPlayerToTeam(team, player)));
         return teamCrawler;
     }
 
@@ -153,10 +155,10 @@ public class Neo4jInserter {
         PlayerCrawler playerCrawler = new PlayerCrawler();
         TeamCrawler teamCrawler = new TeamCrawler();
 
-        teamCrawler.onTeamCrawled((Team team) -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
+        teamCrawler.onTeamCrawled(team -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
         playerCrawler.onPlayerCrawled(this::createPlayer);
 
-        graphDb.execute("MATCH (team:Team) RETURN team.uri AS uri").forEachRemaining((Map<String, Object> row) -> {
+        graphDb.execute("MATCH (team:Team) RETURN team.uri AS uri").forEachRemaining(row -> {
             Team team = new Team((String) row.get("uri"), (String) row.get("name"));
             teamCrawler.crawlTeamPage(team);
         });
