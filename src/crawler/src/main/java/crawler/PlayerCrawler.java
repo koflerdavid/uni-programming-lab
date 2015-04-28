@@ -58,11 +58,12 @@ public class PlayerCrawler {
 			// System.out.println("----------------");
 			// }
 
-			// get player number
+			// get player name and number
 			Element e = it.next();
 			if (e.text().contains(".")) {
-				player.setNumber(Integer.parseInt(e.text().substring(0,
-						e.text().indexOf("."))));
+                String[] parts = e.text().split("\\. ");
+                player.setNumber(Integer.parseInt(parts[0]));
+                player.setName(parts[1]);
 			} else {
 				player.setNumber(-1);
 			}
