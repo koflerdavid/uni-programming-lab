@@ -46,6 +46,9 @@ public class TeamCrawler {
 							"Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0")
 					.timeout(Utils.HTTP_TIMEOUT).get();
 
+            String[] parts = doc.getElementsByTag("h1").text().split(" Club details", 2);
+            team.setName(parts[0]);
+
 			// Get all the data by iterating through the club info box
 			Elements clubInfo = doc.getElementsByTag("tr");
 			Iterator<Element> it = clubInfo.iterator();
@@ -59,6 +62,7 @@ public class TeamCrawler {
 				team.setNickname("");
 			}
 
+            System.out.println("Name: " + team.getName());
 			System.out.println("Nickname: " + team.getNickname());
 
 			// Get ground name
