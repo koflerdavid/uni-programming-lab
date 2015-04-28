@@ -38,7 +38,7 @@ public class PlayerCrawler {
 	public void crawlPlayerPage(Player player) {
 		String uri = player.getUri();
 		LinkedHashSet<Transfer> transferHistory = new LinkedHashSet<Transfer>();
-        SimpleDateFormat dateParser = new SimpleDateFormat("dd-MMM-yyyy");
+        SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM, YY");
 
 		try {
 			Thread.sleep(Utils.HTTP_SLEEP);

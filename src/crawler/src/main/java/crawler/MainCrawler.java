@@ -18,7 +18,7 @@ public class MainCrawler {
         this.tournamentCrawler = tournamentCrawler;
     }
 
-    public HashSet<Tournament> crawlMainPage(String uri) {
+    public HashSet<Tournament> crawlMainPage(String uri) throws IOException {
 		LinkedHashSet<Tournament> tournaments = new LinkedHashSet<Tournament>();
 
 		try {
@@ -59,6 +59,11 @@ public class MainCrawler {
 	public static void main(String[] args) {
 		MainCrawler mc = new MainCrawler(new TournamentCrawler());
 		String uri = "http://www.soccerbase.com/tournaments/home.sd";
-		mc.crawlMainPage(uri);
-	}
+
+        try {
+            mc.crawlMainPage(uri);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

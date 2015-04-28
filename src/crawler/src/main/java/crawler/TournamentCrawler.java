@@ -17,8 +17,10 @@ import java.util.function.Consumer;
 public class TournamentCrawler {
     private ArrayList<Consumer<Tournament>> onTournamentCrawledListeners = new ArrayList<>();
 
-	public void crawlAllTournamentPages(Collection<Tournament> tournaments) {
-        tournaments.forEach(this::crawlTournamentPage);
+	public void crawlAllTournamentPages(Collection<Tournament> tournaments) throws IOException {
+        for (Tournament tournament : tournaments) {
+            crawlTournamentPage(tournament);
+        }
 	}
 
     public void onTournamentCrawled(Consumer<Tournament> listener) {
@@ -31,7 +33,7 @@ public class TournamentCrawler {
         }
     }
 
-	public void crawlTournamentPage(Tournament tournament) {
+	public void crawlTournamentPage(Tournament tournament) throws IOException {
 		String uri = tournament.getUri();
 		System.err.println("Crawling tournament: " + tournament.getName());
 		LinkedHashSet<Team> teams = new LinkedHashSet<Team>();
@@ -70,9 +72,6 @@ public class TournamentCrawler {
 
             emitTournamentCrawled(tournament);
 
-		} catch (IOException e) {
-			System.err.println("TournamentCrawler failed");
-			e.printStackTrace();
 		} catch (InterruptedException e) {
 			System.err.println("Sleep failed");
 			e.printStackTrace();
@@ -80,10 +79,16 @@ public class TournamentCrawler {
 	}
 
 	public static void main(String[] args) {
+        TeamCrawler teamCrawler = new TeamCrawler();
 		TournamentCrawler tc = new TournamentCrawler();
+        tc.onTournamentCrawled((Tournament tournament) -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
 		Tournament tournament = new Tournament(
-				"http://www.soccerbase.com/tournaments/tournament.sd?comp_id=1",
-				"Premier League");
-		tc.crawlTournamentPage(tournament);
-	}
+				"http://www.soccerbase.com/tournaments/tournament.sd?comp_id=78",
+				"FA Trophy");
+        try {
+            tc.crawlTournamentPage(tournament);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

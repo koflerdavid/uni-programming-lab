@@ -89,7 +89,7 @@ public class TeamCrawler {
 
 			do {
 				// Manager info
-				it.next();
+				e = it.next();
 			} while (!e.text().startsWith("Year Formed"));
 
 			// Get Year formed
