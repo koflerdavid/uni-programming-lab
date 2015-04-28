@@ -3,8 +3,12 @@ package crawler;
 import model.Player;
 import model.Team;
 import model.Tournament;
-import org.neo4j.graphdb.*;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
 
+import java.io.IOException;
 import java.util.*;
 
 public class Neo4jInserter {
@@ -122,22 +126,48 @@ public class Neo4jInserter {
                 .columnAs("membership").next();
     }
 
-    public Set<Tournament> crawlWebsite(String rootUri) {
-        // Create the crawler. Doing it this way offers the opportunity to attach listeners
-        // which are executed after an entity was parsed.
-        PlayerCrawler playerCrawler = new PlayerCrawler();
-        playerCrawler.onPlayerCrawled(this::createPlayer);
-
-        TeamCrawler teamCrawler = new TeamCrawler();
-        teamCrawler.onTeamCrawled(this::createTeam);
-        teamCrawler.onTeamCrawled((Team team) -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
-        teamCrawler.onTeamCrawled((Team team) -> team.getPlayers().forEach((Player player) -> addPlayerToTeam(team, player)));
-
+    private TournamentCrawler getTournamentCrawler(TeamCrawler teamCrawler) {
         TournamentCrawler tournamentCrawler = new TournamentCrawler();
         tournamentCrawler.onTournamentCrawled(this::createTournament);
         tournamentCrawler.onTournamentCrawled((Tournament tournament) -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
         tournamentCrawler.onTournamentCrawled((Tournament tournament) ->
                 tournament.getTeams().forEach((Team team) -> addTeamToTournament(tournament, team)));
+        return tournamentCrawler;
+    }
+
+    private TeamCrawler getTeamCrawler(PlayerCrawler playerCrawler) {
+        TeamCrawler teamCrawler = new TeamCrawler();
+        teamCrawler.onTeamCrawled(this::createTeam);
+        teamCrawler.onTeamCrawled((Team team) -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
+        teamCrawler.onTeamCrawled((Team team) -> team.getPlayers().forEach((Player player) -> addPlayerToTeam(team, player)));
+        return teamCrawler;
+    }
+
+    private PlayerCrawler getPlayerCrawler() {
+        PlayerCrawler playerCrawler = new PlayerCrawler();
+        playerCrawler.onPlayerCrawled(this::createPlayer);
+        return playerCrawler;
+    }
+
+    public void crawlPlayers() {
+        PlayerCrawler playerCrawler = new PlayerCrawler();
+        TeamCrawler teamCrawler = new TeamCrawler();
+
+        teamCrawler.onTeamCrawled((Team team) -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
+        playerCrawler.onPlayerCrawled(this::createPlayer);
+
+        graphDb.execute("MATCH (team:Team) RETURN team.uri AS uri").forEachRemaining((Map<String, Object> row) -> {
+            Team team = new Team((String) row.get("uri"), (String) row.get("name"));
+            teamCrawler.crawlTeamPage(team);
+        });
+    }
+
+    public Set<Tournament> crawlWebsite(String rootUri) throws IOException {
+        // Create the crawler. Doing it this way offers the opportunity to attach listeners
+        // which are executed after an entity was parsed.
+        PlayerCrawler playerCrawler = getPlayerCrawler();
+        TeamCrawler teamCrawler = getTeamCrawler(playerCrawler);
+        TournamentCrawler tournamentCrawler = getTournamentCrawler(teamCrawler);
 
         MainCrawler crawler = new MainCrawler(tournamentCrawler);
 
@@ -146,14 +176,38 @@ public class Neo4jInserter {
         return tournaments;
     }
 
+    public Tournament crawlTournament(Tournament tournament) {
+        PlayerCrawler playerCrawler = getPlayerCrawler();
+
+        TeamCrawler teamCrawler = getTeamCrawler(playerCrawler);
+
+        TournamentCrawler tournamentCrawler = getTournamentCrawler(teamCrawler);
+
+        try {
+            tournamentCrawler.crawlTournamentPage(tournament);
+            return tournament;
+
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     public static void main(String[] args) {
-        String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
         String dbPath = args[0];
 
         GraphDatabaseService graphDb = Neo4jHelper.openGrapDb(dbPath);
         Neo4jHelper.createSchema(graphDb);
-
         Neo4jInserter inserter = new Neo4jInserter(graphDb);
-        inserter.crawlWebsite(rootUri);
+
+        try {
+            if (args.length > 2) {
+                inserter.crawlTournament(new Tournament(args[1], args[2]));
+            } else {
+                String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
+                inserter.crawlWebsite(rootUri);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
