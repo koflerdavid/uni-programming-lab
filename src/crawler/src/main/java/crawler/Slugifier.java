@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 public class Slugifier {
 
-    public static final String UNWANTED_CHARACTERS = "[ +=.,<>;:'\"\\\\]]";
+    public static final String UNWANTED_CHARACTERS = "[+=.,<>;:'\"\\\\]]";
 
     public static String generateSlug(Iterable<String> sources) throws IllegalArgumentException {
         Stream<String> purifiedStrings = IteratorUtil.asCollection(sources).stream().map(Slugifier::purifyString);
@@ -25,7 +25,11 @@ public class Slugifier {
     }
 
     protected static String purifyString(String s) {
-        return s != null ? s.trim().toLowerCase().replaceAll(UNWANTED_CHARACTERS, "") : "";
+        return s == null ? "" : s
+                .trim()
+                .toLowerCase()
+                .replace(' ', '-')
+                .replaceAll(UNWANTED_CHARACTERS, "");
     }
 
     public static <T> Predicate<T> asPredicate(Function<T, Boolean> callable) {
@@ -63,7 +67,7 @@ public class Slugifier {
         try (Transaction tx = graphDb.beginTx()) {
             Result result =  graphDb.execute("MATCH (node:"+labelName +")" +
                     " WITH node.slug, COUNT(node.slug) AS c, COLLECT(node) AS duplicates" +
-                    " WHERE C > 0" +
+                    " WHERE C > 1" +
                     " RETURN duplicates");
             ResourceIterator<List<Node>> results = result.columnAs("duplicates");
 
