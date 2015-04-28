@@ -7,8 +7,11 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.schema.ConstraintDefinition;
 import org.neo4j.graphdb.schema.ConstraintType;
+import org.neo4j.helpers.collection.IteratorUtil;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 public class Neo4jHelper {
     private Neo4jHelper() {
@@ -38,13 +41,21 @@ public class Neo4jHelper {
             for (String labelName : Arrays.asList("Player", "Team", "Tournament", "Trainer")) {
                 Label label = DynamicLabel.label(labelName);
                 boolean uniqueConstraintOnUri = false;
+                boolean uniqueConstraintOnSlug = false;
 
                 for (ConstraintDefinition definition : graphDb.schema().getConstraints(label)) {
                     if (definition.isConstraintType(ConstraintType.UNIQUENESS)) {
-                        if (definition.getPropertyKeys().spliterator().getExactSizeIfKnown() == 1
-                                && "uri".equals(definition.getPropertyKeys().iterator().next())) {
-                            uniqueConstraintOnUri = true;
-                            break;
+                        Collection<String> propertyKeys = IteratorUtil.asCollection(definition.getPropertyKeys());
+                        if (propertyKeys.size() == 1) {
+                            final String propertyName = propertyKeys.iterator().next();
+
+                            if ("uri".equals(propertyName)) {
+                                uniqueConstraintOnUri = true;
+                            }
+
+                            if ("slug".equals(propertyName)) {
+                                uniqueConstraintOnSlug = true;
+                            }
                         }
                     }
                 }
@@ -53,6 +64,12 @@ public class Neo4jHelper {
                     graphDb.schema()
                             .constraintFor(label)
                             .assertPropertyIsUnique("uri").create();
+                }
+
+                if (!uniqueConstraintOnSlug) {
+                    graphDb.schema()
+                            .constraintFor(label)
+                            .assertPropertyIsUnique("slug").create();
                 }
             }
 
