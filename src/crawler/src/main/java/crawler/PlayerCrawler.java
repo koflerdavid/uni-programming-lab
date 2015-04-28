@@ -2,7 +2,7 @@ package crawler;
 
 import model.Player;
 import model.Team;
-import model.Transfer;
+import model.Contract;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -37,7 +37,7 @@ public class PlayerCrawler {
 
 	public void crawlPlayerPage(Player player) {
 		String uri = player.getUri();
-		LinkedHashSet<Transfer> transferHistory = new LinkedHashSet<Transfer>();
+		LinkedHashSet<Contract> contracts = new LinkedHashSet<Contract>();
         SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM, YY");
 
 		try {
@@ -157,47 +157,47 @@ public class PlayerCrawler {
 			e = it.next();
 			System.out.println("Transfer History of " + player.getName());
 			do {
-				Transfer transfer = new Transfer();
+				Contract contract = new Contract();
 
 				// get team
 				Elements links = e.select("a[href*=/teams/team.sd?team_id]");
 				for (Element link : links) {
-					transfer.setTeam(new Team(link.attr("abs:href"), Utils
+					contract.setTeam(new Team(link.attr("abs:href"), Utils
 							.trim(link.text(), 35)));
 				}
-				System.out.println("\tTeam: " + transfer.getTeam().getName());
+				System.out.println("\tTeam: " + contract.getTeam().getName());
 
 				// get date from
 				String from = Utils.trim(
 						e.text().substring(e.text().indexOf(",") - 6), 11);
 				System.out.println("\tDate Joined: " + from);
-				transfer.setFrom(dateParser.parse(from));
+				contract.setFrom(dateParser.parse(from));
 
 				// get date to (empty if actual club)
 				String to = Utils.trim(
 						e.text().substring(e.text().lastIndexOf(", ") - 6), 11);
 				if (to.equals(from)) {
-					transfer.setTo(null);
+					contract.setTo(null);
 				} else {
-					transfer.setTo(dateParser.parse(to));
+					contract.setTo(dateParser.parse(to));
 				}
-				System.out.println("\tDate Left: " + transfer.getTo());
+				System.out.println("\tDate Left: " + contract.getTo());
 
 				if (e.text().contains("Loan")) {
-					transfer.setFee("Loan");
+					contract.setFee("Loan");
 					System.out.println("\tFee: Loan");
 				} else {
-					transfer.setFee("Signed");
+					contract.setFee("Signed");
 					System.out.println("\tFee: Signed");
 				}
 				System.out.println("---");
-				transferHistory.add(transfer);
+				contracts.add(contract);
 
 				e = it.next();
 
 			} while (!e.text().startsWith("Totals"));
 
-			player.setTransferHistory(transferHistory);
+			player.setContracts(contracts);
 
             emitPlayerCrawled(player);
 

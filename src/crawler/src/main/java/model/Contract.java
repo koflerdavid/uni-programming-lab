@@ -2,7 +2,7 @@ package model;
 
 import java.util.Date;
 
-public class Transfer {
+public class Contract {
 	private Team team;
 	private Date from;
 	private Date to;

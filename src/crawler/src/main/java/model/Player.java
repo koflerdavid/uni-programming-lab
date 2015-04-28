@@ -16,7 +16,7 @@ public class Player {
 	private String nationality;
 	private String dateSigned;
 	private String fee;
-	private LinkedHashSet<Transfer> transferHistory;
+	private LinkedHashSet<Contract> contracts;
 
 	public Player(String uri, String name) {
 		this.uri = uri;
@@ -95,12 +95,12 @@ public class Player {
 		this.fee = fee;
 	}
 
-	public LinkedHashSet<Transfer> getTransferHistory() {
-		return transferHistory;
+	public LinkedHashSet<Contract> getContracts() {
+		return contracts;
 	}
 
-	public void setTransferHistory(LinkedHashSet<Transfer> transferHistory) {
-		this.transferHistory = transferHistory;
+	public void setContracts(LinkedHashSet<Contract> contracts) {
+		this.contracts = contracts;
 	}
 
 	public int getNumber() {
