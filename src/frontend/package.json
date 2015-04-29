@@ -12,6 +12,7 @@
         "bluebird": "2.9.*",
         "bower": "1.4.*",
         "express": "4.*",
+        "line-reader": "^0.2.4",
         "neo4j-simple": "0.7.*",
         "react-tools": "^0.13.2"
     },

@@ -1,5 +1,6 @@
 var express = require('express');
 var soccervis = require('./js/soccervis');
+var linereader = require('line-reader');
 
 var port = 8080;
 var neo4j_host = 'http://localhost:7474';
@@ -12,7 +13,7 @@ var soccervisConnection = new soccervis.connection(neo4j_host);
 app.use(express.static(__dirname)).listen(port);
 
 app.get('/search', function (req, res) {
-    var searchText = req.query.text;
+    var searchText = req.query.text.toLowerCase();
     //TODO use searchtext to filter all tournaments/players/teams
     //the output just look like this:
     var initArr = function(name){
@@ -26,10 +27,15 @@ app.get('/search', function (req, res) {
     }
     var tournaments = initArr('Tournament');
     var players = initArr('Player');
-    var teams = initArr('Team');
+    var teams = [];
+    for(var i =0;i<allteams.length;i++){
+        team = allteams[i];
+        if(team.namelowercase && team.namelowercase.indexOf(searchText) > -1)
+            teams.push({name:team.name,uid:team.uid})
+    }
     res.send(JSON.stringify({
-        Tournaments: tournaments,
-        Players:players,
+        Tournaments:[],
+        Players:[],
         Teams:teams
     }));
 });
@@ -99,16 +105,30 @@ app.get('/team', function (req, res) {
 });
 
 app.get('/team/:team', function (req, res) {
-    // Get a single team
-    soccervisConnection.getTeam(req.params.team)
-        .then(function (team) {
-            if (team == null) {
-                res.statusCode = 404;
-                res.send(null);
-            } else {
-                res.send(JSON.stringify(team));
+    try{
+        var teamid = parseInt(req.url.substring('/team/'.length))-1;
+        if(teamid>=0 && teamid<allteams.length){
+            var team = allteams[teamid];
+            var players = [];
+            if(team.players)
+                players = team.players;
+            var pos = alllocs[teamid];
+            var transfers =[];
+            if (pos.length==2){
+                var tmp = pos[0];
+                pos[0] = pos[1];
+                pos[1] = tmp;
+                transfers = [{
+                    from:{name:team.name,uid:team.uid,pos:pos},
+                    to:{name:team.name,uid:team.uid,pos:pos},
+                    strength:5 }]
             }
-        });
+            var result = {name:team.name,details:team.details,players:players,transfers:transfers};
+            res.send(JSON.stringify(result));
+        }
+    }catch(e){
+        console.log(e);
+    }
 });
 
 app.get('/team/:team/transfers', function (req, res) {
@@ -163,4 +183,25 @@ app.get('/player/:player', function (req, res) {
 
 app.get('/player/:player/transfers', function (req, res) {
     res.send('Get all transfers of a player');
+});
+
+var allteams = []
+linereader.eachLine('data/teams.dat',function(line,last){
+    if(line.length>0){
+        var team = JSON.parse(line);
+        team.namelowercase = team.name.toLowerCase();
+        team.uid = allteams.length+1;
+        allteams.push(team);
+    }else
+        allteams.push({});
+    if(last) console.log('parsed ' + allteams.length + ' teams!');
+});
+var alllocs = []
+linereader.eachLine('data/locs.dat',function(line,last){
+    if(line.length>0){
+        var loc = JSON.parse(line);
+        alllocs.push(loc);
+    }else
+        alllocs.push([]);
+    if(last) console.log('parsed ' + alllocs.length + ' locations!');
 });

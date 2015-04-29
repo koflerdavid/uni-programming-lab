@@ -58,7 +58,7 @@ var SearchResult = React.createClass({
                     entry.type = category;
                     rows.push(<Result entry={entry} onSelect={self.props.onSelect} key={entry.uid}/>);
                 });
-                rows.push(<Divider />);
+                rows.push(<Divider key={"dividerkey"}/>);
             }
         },this.props.result);
         return (
@@ -157,6 +157,7 @@ var DetailView = React.createClass({
         this.props.onSelected(null);
     },
     render: function(){
+        var self = this;
         var selected = this.props.selected;
         if(!selected || this.props.hidden)
             return null
@@ -180,7 +181,13 @@ var DetailView = React.createClass({
                 break;
             case 'Teams':
                 this.addRow(rows,'Name',selected.name);
-                this.addRow(rows,'Year Formed',selected.yearformed.toString());
+                console.log(selected);
+                if(selected.details)
+                    Object.keys(selected.details).forEach(function(detailkey){
+                        console.log(detailkey)
+                        console.log(selected.details[detailkey])
+                        self.addRow(rows,detailkey,selected.details[detailkey]);
+                    });
                 if(selected.players&&selected.players.length>0)
                     rows.push(<RowList entities={selected.players} type="Players" onSelected={this.props.onSelected}/>);
                 break;
@@ -239,7 +246,7 @@ var App = React.createClass({
             window.globe.updateTransfers([]);
             return
         }
-        $.getJSON("/"+this.staticURL[e.type]+'?name='+e.name, function(result){
+        $.getJSON("/"+this.staticURL[e.type]+'/'+e.uid, function(result){
             result.type = e.type;
             if(self.isMounted()){
                 var transfers = [];
@@ -248,7 +255,7 @@ var App = React.createClass({
                         break;
                     case 'Teams':
                     case 'Players':
-                        transfers=result.transfers;
+                        transfers=result.transfers?result.transfers:[];
                         break;
                 }
                 window.globe.updateTransfers(transfers);
