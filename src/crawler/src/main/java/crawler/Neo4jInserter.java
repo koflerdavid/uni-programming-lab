@@ -1,5 +1,6 @@
 package crawler;
 
+import model.Contract;
 import model.Player;
 import model.Team;
 import model.Tournament;
@@ -7,13 +8,14 @@ import org.neo4j.graphdb.*;
 import org.neo4j.helpers.collection.IteratorUtil;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Neo4jInserter {
     private GraphDatabaseService graphDb;
 
     public static enum SoccerRelationshipTypes implements RelationshipType {
-        IN_TOURNAMENT, CURRENT_TEAM
+        IN_TOURNAMENT, CURRENT_TEAM, IN_TEAM
     }
 
     public Neo4jInserter(GraphDatabaseService graphDb) {
@@ -33,8 +35,8 @@ public class Neo4jInserter {
         parameters.put("nationality", player.getNationality());
 
         Node nPlayer = (Node) graphDb
-                .execute("MERGE (player : Player { uri: {uri}, slug: {slug} })" +
-                        " SET player.name = {name}, player.age = {age}, player.birthday = {birthday}," +
+                .execute("MERGE (player : Player { uri: {uri} })" +
+                        " SET player.name = {name}, player.slug = {slug}, player.age = {age}, player.birthday = {birthday}," +
                         "  player.birthplace = {birthplace}, player.height = {height}, player.weight = {weight}," +
                         "  player.nationality = {nationality}" +
                         " RETURN player", parameters)
@@ -60,8 +62,8 @@ public class Neo4jInserter {
         parameters.put("trainer", team.getTrainer() != null ? team.getTrainer().getName() : null);
 
         Node nTeam = (Node) graphDb
-                .execute("MERGE (team : Team { uri: {uri}, slug: {slug} })" +
-                        " SET team.name = {name}, team.nickname = {nickname}, team.website = {website}," +
+                .execute("MERGE (team : Team { uri: {uri} })" +
+                        " SET team.name = {name}, team.slug = {slug}, team.nickname = {nickname}, team.website = {website}," +
                         "  team.yearFormed = {yearFormed}, team.address1 = {address1}, team.address1 = {address1}," +
                         "  team.address2 = {address2}, team.address3 = {address3}, team.postcode = {postcode}," +
                         "  team.chairman = {chairman}, team.ground = {ground}, team.trainer = {trainer}" +
@@ -80,8 +82,8 @@ public class Neo4jInserter {
         parameters.put("country", tournament.getCountry());
 
         Node nTournament = (Node) graphDb
-                .execute("MERGE (tournament : Tournament { uri: {uri}, slug: {slug} })" +
-                        " SET tournament.name = {name}, tournament.country = {country}" +
+                .execute("MERGE (tournament : Tournament { uri: {uri} })" +
+                        " SET tournament.name = {name}, tournament.slug = {slug}, tournament.country = {country}" +
                         " RETURN tournament", parameters)
                 .columnAs("tournament").next();
 
@@ -128,6 +130,41 @@ public class Neo4jInserter {
         return IteratorUtil.singleOrNull(results);
     }
 
+    public List<Relationship> addPlayerContracts(Player player) {
+        HashMap<String, Object> parameters = new HashMap<>(5);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        ArrayList<Relationship> contracts = new ArrayList<>(player.getContracts().size());
+
+        parameters.put("playerUri", player.getUri());
+
+        try (Transaction tx = graphDb.beginTx()) {
+            for (Contract contract : player.getContracts()) {
+                parameters.put("teamUri", contract.getTeam().getUri());
+                parameters.put("fee", contract.getFee());
+                parameters.put("from", contract.getFrom() != null ? dateFormat.format(contract.getFrom()) : null);
+                parameters.put("to", contract.getTo() != null ? dateFormat.format(contract.getTo()) : null);
+
+                ResourceIterator<Relationship> result = graphDb
+                        .execute("MERGE (team:Team { uri: {teamUri} })" +
+                                " MERGE (player:Player { uri: {playerUri} })" +
+                                " MERGE (team)-[contract:" + SoccerRelationshipTypes.IN_TEAM + "]-(player)" +
+                                "  SET contract.from = {from}, contract.to = {to}, contract.fee = {fee}" +
+                                " RETURN contract", parameters)
+                        .columnAs("contract");
+
+                if (result.hasNext()) {
+                    contracts.add(result.next());
+                }
+            }
+
+            tx.success();
+        }
+
+        System.out.println("Contracts: " + contracts.size());
+        return contracts;
+    }
+
     private TournamentCrawler getTournamentCrawler(TeamCrawler teamCrawler) {
         TournamentCrawler tournamentCrawler = new TournamentCrawler();
         tournamentCrawler.onTournamentCrawled(this::createTournament);
@@ -148,6 +185,7 @@ public class Neo4jInserter {
     private PlayerCrawler getPlayerCrawler() {
         PlayerCrawler playerCrawler = new PlayerCrawler();
         playerCrawler.onPlayerCrawled(this::createPlayer);
+        playerCrawler.onPlayerCrawled(this::addPlayerContracts);
         return playerCrawler;
     }
 

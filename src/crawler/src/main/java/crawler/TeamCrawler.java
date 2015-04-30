@@ -33,7 +33,7 @@ public class TeamCrawler {
         }
     }
 
-	public void crawlTeamPage(Team team) {
+	public boolean crawlTeamPage(Team team) {
 		String uri = team.getUri();
 		System.err.println("Crawling team page: " + team.getName());
 
@@ -183,16 +183,18 @@ public class TeamCrawler {
 			System.err.println("TeamCrawler failed");
 			e.printStackTrace();
 		} catch (InterruptedException e) {
-			System.err.println("Sleep failed");
-			e.printStackTrace();
+            // Abort crawling
+			return false;
 		}
+
+        return true;
 	}
 
 	public static void main(String[] args) {
 		TeamCrawler tc = new TeamCrawler();
 		Team t = new Team(
 				"http://www.soccerbase.com/teams/team.sd?team_id=536",
-				"Aston Villa");
+				"Aston la");
 		tc.crawlTeamPage(t);
 	}
 }

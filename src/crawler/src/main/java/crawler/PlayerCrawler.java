@@ -35,7 +35,7 @@ public class PlayerCrawler {
         players.forEach(this::crawlPlayerPage);
 	}
 
-	public void crawlPlayerPage(Player player) {
+	public boolean crawlPlayerPage(Player player) {
 		String uri = player.getUri();
 		LinkedHashSet<Contract> contracts = new LinkedHashSet<Contract>();
         SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM, YY");
@@ -170,7 +170,7 @@ public class PlayerCrawler {
 				// get date from
 				String from = Utils.trim(
 						e.text().substring(e.text().indexOf(",") - 6), 11);
-				System.out.println("\tDate Joined: " + from);
+//				System.out.println("\tDate Joined: " + from);
 				contract.setFrom(dateParser.parse(from));
 
 				// get date to (empty if actual club)
@@ -181,14 +181,14 @@ public class PlayerCrawler {
 				} else {
 					contract.setTo(dateParser.parse(to));
 				}
-				System.out.println("\tDate Left: " + contract.getTo());
+//				System.out.println("\tDate Left: " + contract.getTo());
 
 				if (e.text().contains("Loan")) {
 					contract.setFee("Loan");
-					System.out.println("\tFee: Loan");
+//					System.out.println("\tFee: Loan");
 				} else {
 					contract.setFee("Signed");
-					System.out.println("\tFee: Signed");
+//					System.out.println("\tFee: Signed");
 				}
 				System.out.println("---");
 				contracts.add(contract);
@@ -205,12 +205,13 @@ public class PlayerCrawler {
             System.err.println("TournamentCrawler failed");
             e.printStackTrace();
         } catch (InterruptedException e) {
-            System.err.println("Sleep failed");
-            e.printStackTrace();
+            return false;
         } catch (ParseException e) {
             System.err.println("Invalid date format");
             e.printStackTrace();
         }
+
+        return true;
     }
 
 	public static void main(String[] args) {

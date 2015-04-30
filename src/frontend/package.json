@@ -9,9 +9,15 @@
         "url": "https://github.com/koflerdavid/uni-programming-lab.git"
     },
     "dependencies": {
+        "bluebird": "2.9.*",
+        "bower": "1.4.*",
         "express": "4.*",
         "neo4j-simple": "0.7.*",
-        "bluebird": "2.9.*"
+        "react-tools": "^0.13.2"
+    },
+    "scripts": {
+        "start": "node_modules/react-tools/bin/jsx --extension jsx --watch jsx js & node server.js",
+        "postinstall": "node_modules/bower/bin/bower install"
     },
     "license": "MIT"
 }

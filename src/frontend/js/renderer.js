@@ -14,6 +14,8 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
     var globalScale = 50;
     var particles = null;
     var transferGroup = null;
+    var updateListener = null;
+    var teamLocs = [];
 
     function generateSphere(){
         var geometry = new THREE.SphereGeometry( globalScale-0.2, 32, 32 );
@@ -50,7 +52,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         return new THREE.Vector3(x,y,z);
     }
 
-    function generateBorders(contries) {
+    function generateBorders(countries) {
         var material = new THREE.LineBasicMaterial({color: 0xffffff});
 
         var geometry = new THREE.Geometry();
@@ -72,18 +74,6 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             }
         }
         return new THREE.Line( geometry, material, THREE.LinePieces );
-    }
-
-    function generateCenters(contries) {
-        var material = new THREE.PointCloudMaterial({color: 0xffffff});
-        var geometry = new THREE.Geometry();
-        var verts = geometry.vertices;
-        var ctrs = countries;
-        for(var i=0;i<ctrs.length;i++){
-            var vec = latlongToXYZ(ctrs[i].center);
-            verts.push(vec);
-        }
-        return new THREE.PointCloud( geometry, material );
     }
 
     function midPoint(from,to){
@@ -119,12 +109,12 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         var curves = [];
         for(var i=0;i<transfers.length;i++){
             var transfer = transfers[i];
-            var from = latlongToXYZ(transfer.from);
-            var to = latlongToXYZ(transfer.to);
+            var from = latlongToXYZ(transfer.from.pos);
+            var to = latlongToXYZ(transfer.to.pos);
             var normal = from.clone();
             normal.sub(to);
             var mid = slerp(from,to,0.5);
-            mid.multiplyScalar(globalScale*(1.1+(normal.length()/globalScale)/5));
+            mid.multiplyScalar(globalScale*(1.0+(normal.length()/globalScale)/5));
             var anch1 = mid.clone();
             anch1.add(normal.clone().multiplyScalar(0.5));
             var anch2 = mid.clone();
@@ -152,27 +142,23 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         return curves;
     }
 
-    function addToScene(countries, scene) {
-        scene.add(generateBorders(countries));
-        scene.add(generateSphere());
-        scene.add(generateAtmosphere());
-        //scene.add(generateCenters());
-    }
-
-    function init(countries) {
-        container = document.getElementById( 'container' );
+    function init(container) {
 
         camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
         camera.position.z = globalScale*4;
-        controls = new THREE.OrbitControls(camera);
-        controls.rotateSpeed = 0.3;
+        controls = new THREE.OrbitControls(camera,container);
+        controls.rotateSpeed = 0.5;
         controls.noPan = true;
+        controls.minDistance = globalScale*1.1;
+        controls.maxDistance = globalScale*4;
+        controls.zoomInfluencesRotateSpeed = true;
 
         scene = new THREE.Scene();
-        addToScene(countries, scene);
+        scene.add(generateSphere());
+        scene.add(generateAtmosphere());
 
         renderer = new THREE.WebGLRenderer( { antialias: true } );
-        renderer.setClearColor( 0x000000 );
+        renderer.setClearColor( 0x111111 );
         renderer.setPixelRatio( window.devicePixelRatio );
         renderer.setSize( window.innerWidth, window.innerHeight );
         container.appendChild( renderer.domElement );
@@ -180,7 +166,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         stats = new Stats();
         stats.domElement.style.position = 'absolute';
         stats.domElement.style.top = '0px';
-        container.appendChild( stats.domElement );
+        //container.appendChild( stats.domElement );
 
         window.addEventListener( 'resize', onWindowResize, false );
     }
@@ -201,20 +187,67 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             particles.update();
         controls.update();
         renderer.render( scene, camera );
+        updateTeamLocations();
         stats.update();
     }
+    function initTeamLocations(transfers){
+        var teams = {};
+        transfers.forEach(function(t){
+            teams[t.from.name] = t.from;
+            teams[t.to.name] = t.to;
+        });
+        teamLocs = [];
+        Object.keys(teams).forEach(function(t){
+            teamLocs.push({
+                name:t,
+                uid:teams[t].uid,
+                pos:[0,0],
+                realpos:latlongToXYZ(teams[t].pos),
+                visible:true
+            });
+        });
+    }
+    function updateTeamLocations(){
+        var tmp = new THREE.Vector3();
+        var camloc = new THREE.Vector3();
+        camloc.copy(camera.position).normalize();
+        teamLocs.forEach(function(t){
+            tmp.copy(t.realpos).normalize();
+            if(tmp.dot(camloc)<0.5){
+                t.visible = false;
+                return;
+            }
+            t.visible = true;
+            tmp.copy(t.realpos);
+            tmp.project(camera);
+            tmp.x = (tmp.x*windowHalfX)+windowHalfX;
+            tmp.y = -(tmp.y*windowHalfY)+windowHalfY;
+            t.pos[0]=tmp.x;
+            t.pos[1]=tmp.y;
+        });
+        if(updateListener!=null)
+            updateListener();
+    }
 
-    return function(countries){
+    return function(domElement){
         var self = this;
-        self.updateTransfers = function(transfers){
+        self.updateTransfers = function(transfers,updListener){
             if(transferGroup!=null)
                 scene.remove(transferGroup);
             transferGroup = new THREE.Group();
             var curves = generateTransfers(transferGroup,transfers);
             particles = new Particles(transferGroup,curves);
             scene.add(transferGroup);
+            initTeamLocations(transfers);
+            updateListener = updListener;
         };
-        init(countries);
+        self.getTeamLocations = function(){
+            return teamLocs;
+        };
+        self.setCountries = function(countries){
+            scene.add(generateBorders(countries));
+        };
+        init(domElement);
         animate();
     };
 })(THREE, Detector, Particles, Shaders, Stats);

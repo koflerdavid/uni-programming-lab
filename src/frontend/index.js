@@ -109,6 +109,7 @@ app.get('/player/:player/transfers', function (req, res) {
 app.get('/search/:term', function (req, res) {
     // Look for tournaments, teams and players
     var term = req.params.term;
+
     Promise.join(
         soccervisConnection.simpleTournamentSearch(term),
         soccervisConnection.simpleTeamSearch(term),
