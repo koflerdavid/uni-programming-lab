@@ -6,8 +6,9 @@ var Particles = function(scene,curves) {
     self.init = function(){
         var material = new THREE.PointCloudMaterial({
             color: 0xff0000,
-            size:10,
+            size:20,
             blending: THREE.AdditiveBlending,
+            sizeAttenuation: false,
             transparent:true,
             depthWrite:false,
             map:THREE.ImageUtils.loadTexture('img/particle2.png')});

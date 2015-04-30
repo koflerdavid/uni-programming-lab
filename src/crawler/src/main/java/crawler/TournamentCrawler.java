@@ -12,16 +12,26 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class TournamentCrawler {
     private ArrayList<Consumer<Tournament>> onTournamentCrawledListeners = new ArrayList<>();
 
-	public void crawlAllTournamentPages(Collection<Tournament> tournaments) throws IOException {
+    public List<Tournament> crawlAllTournamentPages(Collection<Tournament> tournaments) throws IOException {
+        ArrayList<Tournament> failed = new ArrayList<>();
+
         for (Tournament tournament : tournaments) {
-            crawlTournamentPage(tournament);
+            try {
+                crawlTournamentPage(tournament);
+            } catch (IOException e) {
+                e.printStackTrace();
+                failed.add(tournament);
+            }
         }
-	}
+
+        return failed;
+    }
 
     public void onTournamentCrawled(Consumer<Tournament> listener) {
         onTournamentCrawledListeners.add(listener);
@@ -33,7 +43,7 @@ public class TournamentCrawler {
         }
     }
 
-	public void crawlTournamentPage(Tournament tournament) throws IOException {
+	public boolean crawlTournamentPage(Tournament tournament) throws IOException {
 		String uri = tournament.getUri();
 		System.err.println("Crawling tournament: " + tournament.getName());
 		LinkedHashSet<Team> teams = new LinkedHashSet<Team>();
@@ -72,9 +82,10 @@ public class TournamentCrawler {
             emitTournamentCrawled(tournament);
 
 		} catch (InterruptedException e) {
-			System.err.println("Sleep failed");
-			e.printStackTrace();
+            return false;
 		}
+
+        return true;
 	}
 
 	public static void main(String[] args) {
@@ -83,7 +94,7 @@ public class TournamentCrawler {
         tc.onTournamentCrawled((Tournament tournament) -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
 		Tournament tournament = new Tournament(
 				"http://www.soccerbase.com/tournaments/tournament.sd?comp_id=78",
-				"FA Trophy");
+				"FA Tr");
         try {
             tc.crawlTournamentPage(tournament);
         } catch (IOException e) {
