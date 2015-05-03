@@ -3,7 +3,17 @@ var soccervis = require('./js/soccervis');
 var Promise = require('bluebird');
 
 var port = 8080;
+if (process.argv.length > 2) {
+    var parsed_value = parseInt(process.argv[2]);
+    if (!Number.isNaN(parsed_value) && parsed_value > 0) {
+        port = parsed_value;
+    }
+}
+
 var neo4j_host = 'http://localhost:7474';
+if (process.argv.length > 3) {
+    neo4j_host = process.argv[3];
+}
 
 console.log("Starting server on 'localhost:" + port + "'");
 
