@@ -24,6 +24,29 @@ copy from proposal? will it be too long?
 \section{Survey}
 copy from proposal? will it be too long?
 \section{Proposed Method}
+
+Our solution so far consists of three parts: the crawler, the geocoder and the website. The crawler is responsible for collecting the data and storing it into the database. The geocoder researches where the home ground of each team is, and adds that information to the database. The website finally renders the data on a 3D globe.
+
+\subsection{Crawler}
+
+The crawler which pulls the data from the website is written in Java. It uses the \verb+jsoup+ library to fetch HTML websites and to parse them. CSS Selectors can then be used to extract the content from the HTML DOM tree. By using Dependency Injection and the Observer model the crawlers for the entities Team, Player and Tournament can be composed, which eases testing the components a lot. Also, since there is no monolithic component which does everything, the crawlers can be used independently from each other, for example to update the data of only a particular entity. 
+
+Implementing the crawler was a bit tricky because not every web page contains all the data. Also, it was not obvious how to store various data, for example the transfers. The web page only contains the contracts a player has with clubs. The transfers have to be calculated, which is  still on our To Do-list because there are overlaps in the contract periods. 
+
+The crawler takes a lot of time to run since there should be a short time delay (at least 10 seconds) between each access to the website, else the website administrator might take measures against a perceived attack.
+
+The space needed to store all the data is vanishingly small (a few MB). The largest amount of it is data about the players and their career history. Neo4j is well-suited to our data model and is easy to use. 
+
+\subsection{Geocoder}
+
+The Geocoder is a Python script and uses the \verb+py2neo+ library to access the database. It then uses the OpenCage geocoder to look up the coordinates of each team's home ground and to store that information in the database. Since their were a few bugs in the OpenCage geocoder bindings for Python the script has to use Python's built-in \verb+urllib+ library to access the web service.
+
+\subsection{Website}
+
+We use NodeJS for implementing the server-side part. We tried to use Java web frameworks, but compared with NodeJS they are very complicated to set up and work with. Also, nowadays it is easier to find webhosting providers for NodeJS than for Java web applications.
+
+The website uses the ThreeJS library to render a globe and dotted lines connecting points on its surface. This visualization will be used to render player transfers. There is also a search field with IntelliSearch, which means that it searches for possible search results while the user types. When the user selects a result then the view is narrowed to that particular result, for example only the transfers of a particular player are displayed.
+
 \section{Evaluation}
 --- under construction ---
 \section{Conclusion}
