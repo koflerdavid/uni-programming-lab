@@ -1,3 +1,4 @@
+
 import sys
 import urllib2
 import urllib
@@ -95,8 +96,7 @@ def getTeam(teamid):
 class dummyf:
     def write(self,bla):
         pass
-    def close(self):
-        pass
+    def close(self): pass
     def __iter__(self):
         return self
     def next(self):
@@ -178,41 +178,59 @@ def geocodeteams():
             locfile.write('['+str(loc[0])+','+str(loc[1])+']\n')
     locfile.close()
 
+wikidataurl = 'https://www.wikidata.org/w/api.php'
+wikidataquery = 'https://wdq.wmflabs.org/api'
+def getJSON(url,attrs):
+    query = urllib.urlencode(attrs)
+    response = urllib2.urlopen(url+'?'+query).read()
+    return json.loads(response)
+
+def findTeamLocation(teamwithvenue,teamwithlocation,teamname):
+    entitieswithteamloc = teamwithlocation['items']
+    teamlocs = teamwithlocation['props']['625']
+    entitieswithvenue = teamwithvenue['items']
+    venues = teamwithvenue['props']['115']
+    results = getJSON(wikidataurl,{'action':'wbsearchentities','search':teamname,'language':'en','limit':'20','format':'json'})
+    if results['success']!=1:
+	raise IOError('success !=1') 
+    results = results['search']
+    for result in results:
+	id = int(result['id'][1:])
+	if id in entitieswithteamloc:
+	    for loc in teamlocs:
+	        if loc[0]==id:
+	            return loc[2]
+	if id in entitieswithvenue:
+	    for loc in venues:
+	        if loc[0]==id:
+	            return loc[2]
+    return None
+
+
 def findlocs():
     # load a list of entities which have a location
-    response = urllib2.urlopen("https://wdq.wmflabs.org/api?q=CLAIM[31:476028]%20AND%20CLAIM[625]&props=625").read()
-    jsonrepspone = json.loads(response)
-    entitieswithloc = jsonrepspone['items']
-    locs = jsonrepspone['props']['625']
+    teamwithlocation = getJSON(wikidataquery,{'q':'CLAIM[31:476028] AND CLAIM[625]','props':'625'})
+    teamwithvenue = getJSON(wikidataquery,{'q':'CLAIM[31:476028] AND NOCLAIM[625] AND CLAIM[115]','props':'115'})
     #print(entitieswithloc)
     foundlocs = []
 
     teamsfile = open('teams.dat','r')
     for i,line in enumerate(teamsfile):
-        #if i>30:
-            #break
-        line = line[:-1]
-        if len(line) != 0:
-            teamname = json.loads(line)['name']
-            query = urllib.urlencode({'action':'wbsearchentities','search':teamname,'language':'en','limit':'20','format':'json'})
-            response = urllib2.urlopen('https://www.wikidata.org/w/api.php?'+query).read()
-            results = json.loads(response)
-            if results['success']!=1:
-                warning('No success in fetching '+str(query))
-                break
-            results = results['search']
-            for result in results:
-                id = int(result['id'][1:])
-                if id in entitieswithloc:
-                    for loc in locs:
-                        if loc[0]==id:
-                            foundlocs.append(loc[2])
-                            print('Found Location for '+str(teamname)+' '+str(loc))
-                            continue
+	#if i>30:
+	    #break
+	line = line[:-1]
+	if len(line) != 0:
+	    teamname = json.loads(line)['name']
+	    try:
+	        loc = findTeamLocation(teamwithvenue,teamwithlocation,teamname)
+	        if loc is not None:
+	            success('Found Location for '+str(teamname)+' '+str(loc))
+	            foundlocs.append(loc)
+	            continue
+	    except IOError, e:
+	        break
         foundlocs.append(None)
         print('No location found for '+str(teamname))
-        #print(response)
-        #print(results)
     teamsfile.close()
     locfile = open('locs.dat','w')
     numfoundlocs = 0
@@ -225,7 +243,6 @@ def findlocs():
             locfile.write('['+str(split[0])+','+str(split[1])+']\n')
     locfile.close()
     success('Found '+str(numfoundlocs)+' addresses')
-
 
 parsed = 1
 hasloc = 0
