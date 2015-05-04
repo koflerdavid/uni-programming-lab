@@ -49,11 +49,14 @@ def getTeam(teamid):
         return None
     details = {}
     lastAttr = None
-    for i,clubinfo in enumerate(root.find_all('table',{'class':'clubInfo'})):
+    for clubinfo in root.find_all('table',{'class':'clubInfo'}):
         rownum = -1
         for row in clubinfo.find_all(['th','strong']):
-            if row.parent.parent != clubinfo and row.parent.parent.parent != clubinfo:
+            if row.parent.parent.parent != clubinfo and row.parent.parent.parent.parent != clubinfo:
+                #print('SKIP: '+str(row))
                 continue
+            #else:
+            #print(row)
             rownum+=1
             raw = row.string
             if raw is None or len(raw.strip())<=1:
@@ -64,6 +67,7 @@ def getTeam(teamid):
                 details[lastAttr] = u''
             elif lastAttr is not None:
                 details[lastAttr] += raw+u' '
+    #print(details)
     toRemove = []
     for key in details:
         if len(details[key])==0:
@@ -174,6 +178,54 @@ def geocodeteams():
             locfile.write('['+str(loc[0])+','+str(loc[1])+']\n')
     locfile.close()
 
+def findlocs():
+    # load a list of entities which have a location
+    response = urllib2.urlopen("https://wdq.wmflabs.org/api?q=CLAIM[31:476028]%20AND%20CLAIM[625]&props=625").read()
+    jsonrepspone = json.loads(response)
+    entitieswithloc = jsonrepspone['items']
+    locs = jsonrepspone['props']['625']
+    #print(entitieswithloc)
+    foundlocs = []
+
+    teamsfile = open('teams.dat','r')
+    for i,line in enumerate(teamsfile):
+        #if i>30:
+            #break
+        line = line[:-1]
+        if len(line) != 0:
+            teamname = json.loads(line)['name']
+            query = urllib.urlencode({'action':'wbsearchentities','search':teamname,'language':'en','limit':'20','format':'json'})
+            response = urllib2.urlopen('https://www.wikidata.org/w/api.php?'+query).read()
+            results = json.loads(response)
+            if results['success']!=1:
+                warning('No success in fetching '+str(query))
+                break
+            results = results['search']
+            for result in results:
+                id = int(result['id'][1:])
+                if id in entitieswithloc:
+                    for loc in locs:
+                        if loc[0]==id:
+                            foundlocs.append(loc[2])
+                            print('Found Location for '+str(teamname)+' '+str(loc))
+                            continue
+        foundlocs.append(None)
+        print('No location found for '+str(teamname))
+        #print(response)
+        #print(results)
+    teamsfile.close()
+    locfile = open('locs.dat','w')
+    numfoundlocs = 0
+    for loc in foundlocs:
+        if loc is None:
+            locfile.write('\n')
+        else:
+            numfoundlocs+=1
+            split = loc.split('|')
+            locfile.write('['+str(split[0])+','+str(split[1])+']\n')
+    locfile.close()
+    success('Found '+str(numfoundlocs)+' addresses')
+
 
 parsed = 1
 hasloc = 0
@@ -190,8 +242,9 @@ if os.path.exists('teams.dat'):
     f.close()
 print(str(hasloc)+'/'+str(parsed-1)+' have an address')
 f = open('teams.dat','a+')
+#f = dummyf()
 try:
-    for i in range(parsed,1000):
+    for i in range(parsed,7000):
         team = getTeam(i)
         if team is None:
             f.write('\n')
@@ -200,6 +253,7 @@ try:
         f.write(teamstr+'\n')
         print('['+str(i)+'] '+teamstr)
     f.close()
-    geocodeteams()
+    findlocs()
+    #geocodeteams()
 except KeyboardInterrupt:
     f.close()
