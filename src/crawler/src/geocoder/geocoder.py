@@ -1,4 +1,4 @@
-from opencage.geocoder import OpenCageGeocode
+#!/bin/env python2
 from py2neo import Graph, Path
 import urllib
 import urllib2
@@ -7,7 +7,7 @@ import json
 
 # Load database and perform query to obtain stadiums
 graph = Graph()
-teams = graph.cypher.execute("MATCH (n:Team) RETURN n.name, n.ground")
+teams = graph.cypher.execute("MATCH (n:Team) WHERE n.name IS NOT NULL RETURN n.name, n.ground")
 print teams
 
 # perform geocoding query for every stadium
