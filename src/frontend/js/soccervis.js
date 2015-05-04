@@ -18,10 +18,18 @@ function Soccervis(dbUri) {
     };
 }
 
-Soccervis.prototype.getTournaments = function () {
+Soccervis.prototype.searchTournament = function (term) {
+    var query = [
+        'MATCH (tournament:Tournament)',
+        ' WHERE tournament.name =~ {namePattern}',
+        'RETURN tournament',
+        'ORDER BY tournament.name ASC'
+    ].join(' ');
+
     return this.graphdb()
-        .query('MATCH (tournament:Tournament) RETURN tournament ORDER BY tournament.name ASC ')
-        .getResults('tournament');
+        .query(query, {}, {namePattern: '(?i).*' + (term || '') + '.*'})
+        .getResults('tournament')
+        .then(convertResultSet);
 };
 
 Soccervis.prototype.getTeam = function (teamSlug) {
@@ -34,12 +42,30 @@ Soccervis.prototype.getTeam = function (teamSlug) {
 };
 
 Soccervis.prototype.getPlayer = function (playerSlug) {
+    var queryParts = [
+        'MATCH (player:Player)',
+        ' WHERE player.slug = {playerSlug}',
+        'OPTIONAL MATCH (player:Player)--(transfer:TRANSFER)',
+        'OPTIONAL MATCH (fromTeam:Team)-->(transfer:TRANSFER)-->(toTeam:Team)',
+        'RETURN player, collect(transfer) AS transfers'
+    ];
+
     return this.graphdb()
-        .query('MATCH (player:Player) WHERE player.slug = {playerSlug} RETURN player', {}, {
+        .query(queryParts.join(' '), {}, {
             playerSlug: playerSlug
         })
-        .getResults('player')
-        .then(firstResultOrNull);
+        .getResults('player', 'transfers')
+        .then(firstResultOrNull)
+        .then(function (result) {
+            if (result != null) {
+                var player = result.player;
+                player.transfers = result.transfers || [];
+                return player;
+            }
+
+            return null;
+        })
+        ;
 };
 
 Soccervis.prototype.searchPlayer = function (name, birthyear, nationality, tournament, team) {
@@ -59,15 +85,7 @@ Soccervis.prototype.searchPlayer = function (name, birthyear, nationality, tourn
 
     if (nationality != null) {
         conditions.push('player.nation =~ {nationPattern}');
-        parameters.nationPattern = '(?i).*' + nation + '.*';
-    }
-
-    if (tournament != null) {
-        queryParts.push('MATCH (player:Player)-[:CURRENT_TEAM]-(team:Team)-[:PARTICIPATES_IN]-(tournament:Tournament)');
-    } else if (team != null) {
-        queryParts.push('MATCH (player:Player)-[:CURRENT_TEAM]-(team:Team)');
-    } else {
-        queryParts.push('MATCH (player:Player)');
+        parameters.nationPattern = '(?i).*' + nationality + '.*';
     }
 
     if (team != null) {
@@ -75,17 +93,38 @@ Soccervis.prototype.searchPlayer = function (name, birthyear, nationality, tourn
         parameters.teamNamePattern = '(?i).*' + team + '.*';
     }
 
+    if (tournament != null) {
+        queryParts.push('MATCH (player:Player)-[:CURRENT_TEAM]-(team:Team)-[:PARTICIPATES_IN]-(tournament:Tournament)');
+    } else {
+        queryParts.push('MATCH (player:Player)-[:CURRENT_TEAM]-(team:Team)');
+    }
+
     if (conditions.length > 0) {
         queryParts.push('WHERE');
         queryParts.push(conditions.join(' AND '));
     }
 
-    var query = '';
+    queryParts.push('OPTIONAL MATCH (player:Player)--(transfer:TRANSFER)');
+    queryParts.push('OPTIONAL MATCH (fromTeam:Team)-->(transfer:TRANSFER)-->(toTeam:Team)');
+
+    queryParts.push('RETURN player, team.slug AS teamSlug, collect(transfer) AS transfers');
+
+    var query = queryParts.join(' ');
+    console.log(query);
+    console.log(parameters);
 
     return this.graphdb()
         .query(query, {}, parameters)
-        .getResults('player');
-}
+        .getResults('player', 'teamSlug', 'transfers')
+        .then(function (results) {
+            return results.map(function (result) {
+                var player = result.player;
+                player.team = result.teamSlug;
+                player.transfers = result.transfers || [];
+                return player;
+            });
+        });
+};
 
 Soccervis.prototype.getTeamTransfers = function (player) {
     return this.graphdb()
@@ -104,11 +143,11 @@ Soccervis.prototype.searchTeam = function (name, yearEstablished, nation, tourna
     var parameters = {};
 
     if (tournamentSlug != null) {
-        queryParts.push('MATCH (team:Team)-[PARTICIPATES]-(tournament:Tournament)');
+        queryParts.push('MATCH (tournament:Tournament)-[:PARTICIPATES]-(team:Team)-[:CURRENT_TEAM]-(player:Player)');
         conditions.push('tournament.slug = {tournamentSlug}');
         parameters.tournamentSlug = tournamentSlug;
     } else {
-        queryParts.push('MATCH (team:Team)');
+        queryParts.push('MATCH (team:Team)-[:CURRENT_TEAM]-(player:Player)');
     }
 
     if (name != null) {
@@ -131,11 +170,19 @@ Soccervis.prototype.searchTeam = function (name, yearEstablished, nation, tourna
         queryParts.push(conditions.join(' AND '));
     }
 
-    queryParts.push('RETURN team ORDER BY team.name ASC');
+    queryParts.push('RETURN team, collect(player) AS players ORDER BY team.name ASC');
 
     return this.graphdb()
         .query(queryParts.join(' '), {}, parameters)
-        .getResults('team');
+        .getResults('team', 'players')
+        .then(function (results) {
+            return results.map(function (result) {
+                var team = result.team;
+                team.players = result.players;
+                team.transfers = result.transfers || [];
+                return team;
+            });
+        });
 };
 
 Soccervis.prototype.getPlayersLeavingTeam = function (teamSlug) {
@@ -180,41 +227,31 @@ Soccervis.prototype.getPlayersJoiningTeam = function (teamSlug) {
         });
 };
 
-Soccervis.prototype.simpleTournamentSearch = function (term) {
-    var query = [
-        'MATCH (tournament:Tournament)',
-        ' WHERE tournament.name ~= {namePattern}',
-        'RETURN tournament'
-    ].join(' ');
-
-    return this.graphdb()
-        .query(query, {}, { namePattern: '(?i).*' + term + '.*' })
-        .getResults('tournament');
-};
-
 Soccervis.prototype.simpleTeamSearch = function (term) {
     var query = [
         'MATCH (team:Team)',
-        ' WHERE team.name ~= {namePattern} OR team.trainer ~= {namePattern} OR team.' +
-        '  OR team.address1 ~= {namePattern} OR team.address2 ~= {namePattern} OR team.address3 ~= {namePattern}',
-        'RETURN tournament'
+        ' WHERE team.name =~ {namePattern} OR team.trainer =~ {namePattern}',
+        '  OR team.address1 =~ {namePattern} OR team.address2 =~ {namePattern} OR team.address3 =~ {namePattern}',
+        'RETURN team'
     ].join(' ');
 
     return this.graphdb()
-        .query(query, {}, { namePattern: '(?i).*' + term + '.*' })
-        .getResults('tournament');
+        .query(query, {}, {namePattern: '(?i).*' + term + '.*'})
+        .getResults('team')
+        .then(convertResultSet);
 };
 
 Soccervis.prototype.simplePlayerSearch = function (term) {
     var query = [
-        'MATCH (tournament:Tournament)',
-        ' WHERE tournament.name ~= {namePattern}',
-        'RETURN tournament'
+        'MATCH (player:Player)',
+        ' WHERE player.name =~ {namePattern}',
+        'RETURN player'
     ].join(' ');
 
     return this.graphdb()
-        .query(query, {}, { namePattern: '(?i).*' + term + '.*' })
-        .getResults('tournament');
+        .query(query, {}, {namePattern: '(?i).*' + term + '.*'})
+        .getResults('player')
+        .then(convertResultSet);
 };
 
 function firstResultOrNull(results) {
@@ -223,4 +260,8 @@ function firstResultOrNull(results) {
     } else {
         return results[0];
     }
+}
+
+function convertResultSet(resultSet) {
+    return resultSet || [];
 }
