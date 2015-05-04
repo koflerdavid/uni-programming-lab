@@ -275,7 +275,7 @@ var App = React.createClass({
             return
         }
 
-        $.getJSON("/"+this.staticURL[e.type]+'?name='+e.name, function(result){
+        $.getJSON("/"+this.staticURL[e.type]+'/'+e.slug, function(result) {
             result.type = e.type;
             if(self.isMounted()){
                 var transfers = [];
@@ -283,7 +283,22 @@ var App = React.createClass({
                 switch(e.type){
                     case 'Tournaments':
                         break;
+
                     case 'Teams':
+                        transfers=result.transfers;
+                        transfers.forEach(function (transfer) {
+                            if (!transfer.hasOwnProperty('from')) {
+                                transfer.from = e;
+                            }
+
+                            if (!transfer.hasOwnProperty('to')) {
+                                transfer.to = e;
+                                console.log('Hi');
+                            }
+                        });
+
+                        break;
+
                     case 'Players':
                         transfers=result.transfers;
                         break;
