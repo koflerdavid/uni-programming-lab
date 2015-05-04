@@ -3,14 +3,16 @@ var IntelliSearch = React.createClass({
         this.onTextChange('');
         this.props.onSelect(e);
     },
+
     render: function(){
         return (
             <div>
                 <SearchBar onTextChange={this.onTextChange} startText={this.state.startText}/>
                 <SearchResult result={this.state.result} onSelect={this.onSelect} visible={this.state.startText!=''}/>
             </div>
-            );
+        );
     },
+
     onTextChange: function(text){
         var self = this;
         if(text==''){
@@ -18,56 +20,65 @@ var IntelliSearch = React.createClass({
                 self.setState(self.getInitialState());
             return;
         }
+
         $.getJSON('/search?text='+text, function(result){
             if(self.isMounted()){
                 self.setState({result:result,startText:text});
             }
         });
     },
+
     getInitialState: function(){
         return {
             result:{
                 Tournaments:[],
                 Players:[],
-                Teams:[],
+                Teams:[]
             },
             startText:''
         };
     }
 });
+
 var SearchBar = React.createClass({
     handleChange: function(){
         this.props.onTextChange(this.refs.searchText.getDOMNode().value);
     },
+
     render: function(){
         return (<input type='text' value={this.props.startText} placeholder='Search...' ref='searchText' onChange={this.handleChange} className='form-control'/>);
     }
 });
+
 var SearchResult = React.createClass({
     render: function(){
-        if(!this.props.visible)
-            return null
+        if(!this.props.visible) {
+            return null;
+        }
+
         var rows = [];
-        var lastCategory = null;
         var self = this;
+
         Object.keys(this.props.result).forEach(function(category){
             var results = this[category];
             if(results && results.length > 0){
                 rows.push(<ResultCategory category={category} key={category} />);
                 results.forEach(function(entry){
                     entry.type = category;
-                    rows.push(<Result entry={entry} onSelect={self.props.onSelect} key={entry.uid}/>);
+                    rows.push(<Result entry={entry} onSelect={self.props.onSelect} key={entry.slug}/>);
                 });
                 rows.push(<Divider />);
             }
-        },this.props.result);
+        }, this.props.result);
+
         return (
             <ul className='dropdown-menu scrollable-menu'>
                 {rows}
             </ul>
-            );
+        );
     }
 });
+
 var Divider = React.createClass({
     render: function(){
         return (
@@ -75,12 +86,14 @@ var Divider = React.createClass({
         );
     }
 });
+
 var ResultCategory = React.createClass({
     staticLABELS: {
         Players:'info',
         Tournaments:'success',
-        Teams:'danger',
+        Teams:'danger'
     },
+
     render: function(){
         var className = 'label label-'+this.staticLABELS[this.props.category]
         return (
@@ -90,17 +103,21 @@ var ResultCategory = React.createClass({
         );
     }
 });
+
 var Result = React.createClass({
     handleClick: function(){
         this.props.onSelect(this.props.entry);
     },
+
     render: function(){
         var style = {
             cursor:'pointer'
-        }
+        };
+
         return (<li style={style}><a onClick={this.handleClick}>{this.props.entry.name}</a></li>);
     }
 });
+
 var DetailRow = React.createClass({
     render: function(){
         return (
@@ -111,57 +128,69 @@ var DetailRow = React.createClass({
         )
     }
 });
+
 var SelectableRow = React.createClass({
     handleClick: function(){
         this.props.onSelected(this.props.entity);
     },
+
     render: function(){
         var style = {
             cursor:'pointer'
-        }
+        };
+
         return (
             <li style={style} className='list-group-item' onClick={this.handleClick}>{this.props.name}</li>
         )
     }
 });
+
 var RowList = React.createClass({
     render: function(){
         var self = this;
         var rows = [];
-        var entities = this.props.entities;
-        entities.forEach(function(entity){
+
+        this.props.entities.forEach(function(entity){
             entity.type=self.props.type;
             rows.push(<SelectableRow entity={entity} name={entity.name} onSelected={self.props.onSelected}/>);
         });
+
         return (
-        <li className='list-group-item'>
-            {this.props.type}
-            <ul className='list-group list-group-transparent'>
-                {rows}
-            </ul>
-        </li>
-        )
+            <li className='list-group-item'>
+                {this.props.type}
+                <ul className='list-group list-group-transparent'>
+                    {rows}
+                </ul>
+            </li>
+        );
     }
 });
+
 var DetailView = React.createClass({
     staticLABELS: {
         Players:'info',
         Tournaments:'success',
-        Teams:'danger',
+        Teams:'danger'
     },
+
     addRow:function(rows,name,data){
-        if(data && data.length>0)
+        if(data && data.length>0) {
             rows.push(<DetailRow name={name} data={data}/>);
+        }
     },
+
     handleExit: function(){
         this.props.onSelected(null);
     },
+
     render: function(){
         var selected = this.props.selected;
-        if(!selected || this.props.hidden)
-            return null
-        var name = selected.name;
+        if(!selected || this.props.hidden) {
+            return null;
+        }
+
         var rows = [];
+
         switch(selected.type){
             case 'Players':
                 this.addRow(rows,'Name',selected.name);
@@ -180,7 +209,7 @@ var DetailView = React.createClass({
                 break;
             case 'Teams':
                 this.addRow(rows,'Name',selected.name);
-                this.addRow(rows,'Year Formed',selected.yearformed.toString());
+                this.addRow(rows,'Year Formed',selected.yearFormed.toString());
                 if(selected.players&&selected.players.length>0)
                     rows.push(<RowList entities={selected.players} type="Players" onSelected={this.props.onSelected}/>);
                 break;
@@ -191,6 +220,7 @@ var DetailView = React.createClass({
                     rows.push(<RowList entities={selected.teams} type="Teams" onSelected={this.props.onSelected}/>);
                 break;
         }
+
         return (
             <div className={"panel panel-"+this.staticLABELS[selected.type]+" panel-transparent"}>
                 <div className="panel-heading">
@@ -203,18 +233,21 @@ var DetailView = React.createClass({
                     {rows}
                 </ul>
             </div>
-            )
+        );
     }
 });
+
 var App = React.createClass({
     staticURL: {
         Players:'player',
         Tournaments:'tournament',
-        Teams:'team',
+        Teams:'team'
     },
+
     componentDidMount: function(){
         window.globe.setOnSelect(this.onSelect);
     },
+
     render: function(){
         var style ={
             position:'absolute',
@@ -222,15 +255,17 @@ var App = React.createClass({
             margin:'20px',
             width:'20%',
             zIndex:1
-        }
+        };
+
         return (
-        <div style={style}>
-            <IntelliSearch onSelect={this.onSelect} />
-            <br/>
-            <DetailView selected={this.state.selected} onSelected={this.onSelect} />
-        </div>
-        )
+            <div style={style}>
+                <IntelliSearch onSelect={this.onSelect} />
+                <br/>
+                <DetailView selected={this.state.selected} onSelected={this.onSelect} />
+            </div>
+        );
     },
+
     onSelect: function(e){
         var self = this;
         if(!e){
@@ -239,10 +274,12 @@ var App = React.createClass({
             window.globe.updateTransfers([]);
             return
         }
+
         $.getJSON("/"+this.staticURL[e.type]+'?name='+e.name, function(result){
             result.type = e.type;
             if(self.isMounted()){
                 var transfers = [];
+
                 switch(e.type){
                     case 'Tournaments':
                         break;
@@ -251,11 +288,13 @@ var App = React.createClass({
                         transfers=result.transfers;
                         break;
                 }
+
                 window.globe.updateTransfers(transfers);
                 self.setState({selected:result});
             }
         });
     },
+
     getInitialState: function(){
         return {selected:null}
     }
