@@ -118,7 +118,7 @@ if os.path.exists('players.dat'):
 f = open('players.dat','a+')
 #f = dummyf()
 try:
-    for i in range(parsed,7000):
+    for i in range(parsed,70000):
         player = getPlayer(i)
         if player is None:
             f.write('\n')

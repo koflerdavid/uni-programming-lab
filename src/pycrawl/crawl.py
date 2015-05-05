@@ -1,31 +1,12 @@
-
+from utils import *
 import sys
 import urllib2
-import urllib
 import re
 import json
 import os.path
 from collections import namedtuple
 from bs4 import BeautifulSoup
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-def success(string):
-    print(bcolors.OKGREEN + string + bcolors.ENDC)
-def warning(string):
-    print(bcolors.FAIL + string + bcolors.ENDC)
-class Object:
-    def to_JSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-mapsapikey = 'AIzaSyBfurHB8WHdp78m7SbqR5mKqypSOUTvKuo'
-Team = namedtuple('Team', ['name','id','details','players'])
 headers = { 'User-Agent' : 'Mozilla/5.0' }
 playeridregex = re.compile('(?<=/players/player.sd\?player_id=)\d+')
 
@@ -94,97 +75,23 @@ def getTeam(teamid):
     team.players = players
     return team
 
-class dummyf:
-    def write(self,bla):
-        pass
-    def close(self): pass
-    def __iter__(self):
-        return self
-    def next(self):
-        raise StopIteration
-
-def geocode(addr):
-    utf = addr.encode('utf-8')
-    addr = urllib.urlencode({'address':utf})
-    response = urllib2.urlopen('http://maps.googleapis.com/maps/api/geocode/json?'+addr).read()
-    tmp = json.loads(response)
-    if ('results' in tmp):
-        for result in tmp['results']:
-            if ('address_components' in result and len(result['address_components'])>0):
-                types = result['address_components'][0]['types']
-                if 'locality' in types or 'point_of_interest' in types or 'establishment' in types:
-                    loc = result['geometry']['location']
-                    lat = loc['lat']
-                    lng = loc['lng']
-                    return [lat,lng]
-    return None
-
-def geocode2(addr):
-    utf = addr.encode('utf-8')
-    addr = urllib.urlencode({'query':utf,'key':mapsapikey})
-    response = urllib2.urlopen('https://maps.googleapis.com/maps/api/place/textsearch/json?'+addr).read()
-    tmp = json.loads(response)
-    if ('results' in tmp):
-        for result in tmp['results']:
-            types = result['types']
-            loc = result['geometry']['location']
-            lat = loc['lat']
-            lng = loc['lng']
-            return [lat,lng]
-    print(response)
-    return None
-def geocodeteams():
-    locfile = open('locs.dat','r')
-    teamsfile = open('teams.dat','r')
-    maxreqs = 100
-    newlocs = []
-    for line in teamsfile:
-        if(0==maxreqs):
-            break
-        line = line[:-1]
-        loc = None
-        locstr = locfile.readline()[:-1]
-        if len(line) == 0:
-            newlocs.append(None)
-            continue
-        elif len(locstr)>0:
-            loc = json.loads(locstr)
-            newlocs.append(loc)
-            continue
-
-        tmp = json.loads(line)['details']
-        for addrtype in ['Address','Ground']:
-            if addrtype in tmp:
-                loc = geocode2(tmp[addrtype])
-                if loc is not None:
-                    break
-        if loc is None:
-            for addrtype in ['Address','Ground']:
-                if addrtype in tmp:
-                    warning('Cant find loc for: '+tmp[addrtype])
-            newlocs.append(None)
-        else:
-            maxreqs-=1
-            success('Found loc for: '+tmp[addrtype])
-            newlocs.append(loc)
-
-    teamsfile.close()
-    locfile.close()
-
-    locfile = open('locs.dat','w')
-    for loc in newlocs:
-        if loc is None:
-            locfile.write('\n')
-        else:
-            locfile.write('['+str(loc[0])+','+str(loc[1])+']\n')
-    locfile.close()
 
 wikidataurl = 'https://www.wikidata.org/w/api.php'
 wikidataquery = 'https://wdq.wmflabs.org/api'
-def getJSON(url,attrs):
-    query = urllib.urlencode(attrs)
-    response = urllib2.urlopen(url+'?'+query).read()
-    return json.loads(response)
+
+def locofvenue(venueid):
+    results = getJSON(wikidataurl,{'action':'wbgetclaims','entity':'Q'+str(venueid),'format':'json','property':'P625'})
+    if len(results['claims'])==0:
+        warning('no claims')
+        return None
+    if len(results['claims']['P625'])>1:
+        warning('multiple snaks')
+        return None
+    for snak in results['claims']['P625']:
+        loc = snak['mainsnak']['datavalue']['value']
+        return [loc['latitude'],loc['longitude']]
+    return None
+
 
 def findTeamLocation(teamwithvenue,teamwithlocation,teamname):
     entitieswithteamloc = teamwithlocation['items']
@@ -193,18 +100,21 @@ def findTeamLocation(teamwithvenue,teamwithlocation,teamname):
     venues = teamwithvenue['props']['115']
     results = getJSON(wikidataurl,{'action':'wbsearchentities','search':teamname,'language':'en','limit':'20','format':'json'})
     if results['success']!=1:
-	raise IOError('success !=1') 
+        raise IOError('success !=1') 
     results = results['search']
     for result in results:
-	id = int(result['id'][1:])
-	if id in entitieswithteamloc:
-	    for loc in teamlocs:
-	        if loc[0]==id:
-	            return loc[2]
-	if id in entitieswithvenue:
-	    for loc in venues:
-	        if loc[0]==id:
-	            return loc[2]
+        id = int(result['id'][1:])
+        if id in entitieswithteamloc:
+            for loc in teamlocs:
+                if loc[0]==id:
+                    split = loc[2].split('|')
+                    return [float(split[0]),float(split[1])]
+        if id in entitieswithvenue:
+            for loc in venues:
+                if loc[0]==id:
+                    venueloc = locofvenue(loc[2])
+                    if venueloc is not None:
+                        return venueloc
     return None
 
 
@@ -214,35 +124,37 @@ def findlocs():
     teamwithvenue = getJSON(wikidataquery,{'q':'CLAIM[31:476028] AND NOCLAIM[625] AND CLAIM[115]','props':'115'})
     #print(entitieswithloc)
     foundlocs = []
+    numfoundlocs = 0
 
     teamsfile = open('teams.dat','r')
-    for i,line in enumerate(teamsfile):
-	#if i>30:
-	    #break
-	line = line[:-1]
-	if len(line) != 0:
-	    teamname = json.loads(line)['name']
-	    try:
-	        loc = findTeamLocation(teamwithvenue,teamwithlocation,teamname)
-	        if loc is not None:
-	            success('Found Location for '+str(teamname)+' '+str(loc))
-	            foundlocs.append(loc)
-	            continue
-	    except IOError, e:
-	        break
-        foundlocs.append(None)
-        print('No location found for '+str(teamname))
-    teamsfile.close()
-    locfile = open('locs.dat','w')
-    numfoundlocs = 0
-    for loc in foundlocs:
-        if loc is None:
-            locfile.write('\n')
-        else:
+    locfile = open('locs.dat','a+')
+    parsedlocsnum = 0
+    for line in locfile:
+        if len(line)>1:
             numfoundlocs+=1
-            split = loc.split('|')
-            locfile.write('['+str(split[0])+','+str(split[1])+']\n')
+            tmp = json.loads(line)
+        parsedlocsnum+=1
+    for i,line in enumerate(teamsfile):
+        if i<parsedlocsnum:
+            continue
+        line = line[:-1]
+        if len(line) != 0:
+            teamname = json.loads(line)['name']
+            try:
+                loc = findTeamLocation(teamwithvenue,teamwithlocation,teamname)
+                if loc is not None:
+                    success('['+str(i+1)+'] Found Location for '+str(teamname)+' '+str(loc))
+                    numfoundlocs+=1
+                    foundlocs.append(loc)
+                    locfile.write(str(loc)+'\n')
+                    continue
+            except IOError, e:
+                break
+        foundlocs.append(None)
+        locfile.write('\n')
+        print('['+str(i+1)+'] No location found for '+str(teamname))
     locfile.close()
+    teamsfile.close()
     success('Found '+str(numfoundlocs)+' addresses')
 
 parsed = 1
