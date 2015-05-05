@@ -1,9 +1,6 @@
 package crawler;
 
-import org.neo4j.graphdb.DynamicLabel;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.schema.ConstraintDefinition;
 import org.neo4j.graphdb.schema.ConstraintType;
@@ -74,5 +71,9 @@ public class Neo4jHelper {
 
             tx.success();
         }
+    }
+
+    public static enum SoccerRelationshipTypes implements RelationshipType {
+        IN_TOURNAMENT, CURRENT_TEAM, IN_TEAM
     }
 }

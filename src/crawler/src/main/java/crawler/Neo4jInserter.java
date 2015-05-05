@@ -14,10 +14,6 @@ import java.util.*;
 public class Neo4jInserter {
     private GraphDatabaseService graphDb;
 
-    public static enum SoccerRelationshipTypes implements RelationshipType {
-        IN_TOURNAMENT, CURRENT_TEAM, IN_TEAM
-    }
-
     public Neo4jInserter(GraphDatabaseService graphDb) {
         this.graphDb = graphDb;
     }
@@ -101,7 +97,7 @@ public class Neo4jInserter {
                         "  ON CREATE SET team.name = {teamName}" +
                         " MERGE (tournament:Tournament { uri: {tournamentUri} })" +
                         "  ON CREATE SET tournament.name = {tournamentName}" +
-                        " MERGE (team)-[participation:" + SoccerRelationshipTypes.IN_TOURNAMENT + "]->(tournament)" +
+                        " MERGE (team)-[participation:" + Neo4jHelper.SoccerRelationshipTypes.IN_TOURNAMENT + "]->(tournament)" +
                         " RETURN participation", parameters)
                 .columnAs("participation");
 
@@ -121,7 +117,7 @@ public class Neo4jInserter {
         ResourceIterator<Relationship> results = graphDb
                 .execute("MATCH (team:Team), (player:Player)" +
                         "  WHERE team.uri = {teamUri} AND player.uri = {playerUri}" +
-                        " MERGE (team)-[membership:" + SoccerRelationshipTypes.CURRENT_TEAM + "]-(player)" +
+                        " MERGE (team)-[membership:" + Neo4jHelper.SoccerRelationshipTypes.CURRENT_TEAM + "]-(player)" +
                         "  SET membership.contractSigned = {contractSigned}, membership.fee = {fee}," +
                         "   membership.number = {number}, membership.position = {position}" +
                         " RETURN membership", parameters)
@@ -148,7 +144,7 @@ public class Neo4jInserter {
                 ResourceIterator<Relationship> result = graphDb
                         .execute("MERGE (team:Team { uri: {teamUri} })" +
                                 " MERGE (player:Player { uri: {playerUri} })" +
-                                " MERGE (team)-[contract:" + SoccerRelationshipTypes.IN_TEAM + "]-(player)" +
+                                " MERGE (team)-[contract:" + Neo4jHelper.SoccerRelationshipTypes.IN_TEAM + "]-(player)" +
                                 "  SET contract.from = {from}, contract.to = {to}, contract.fee = {fee}" +
                                 " RETURN contract", parameters)
                         .columnAs("contract");
