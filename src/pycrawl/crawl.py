@@ -43,11 +43,15 @@ def getTeam(teamid):
     if 'Error' in name:
         warning("maybe 404'ed: "+str(teamid))
         return None
+    team = Object()
+    team.name = name
+    team.id = teamid
 
     details = root.find(id='teamTabs-details')
     if details is None:
         warning("no details page "+str(teamid))
-        return None
+        return team
+
     details = {}
     lastAttr = None
     for clubinfo in root.find_all('table',{'class':'clubInfo'}):
@@ -86,9 +90,6 @@ def getTeam(teamid):
             player.name = link.string
             players.append(player)
 
-    team = Object()
-    team.name = name
-    team.id = teamid
     team.details = details
     team.players = players
     return team
