@@ -235,7 +235,7 @@ public class Neo4jInserter {
     public static void main(String[] args) {
         String dbPath = args[0];
 
-        GraphDatabaseService graphDb = Neo4jHelper.openGrapDb(dbPath);
+        GraphDatabaseService graphDb = Neo4jHelper.openGraphDb(dbPath);
         Neo4jHelper.createSchema(graphDb);
         Neo4jInserter inserter = new Neo4jInserter(graphDb);
 

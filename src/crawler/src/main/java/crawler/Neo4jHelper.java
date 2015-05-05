@@ -11,13 +11,12 @@ import org.neo4j.helpers.collection.IteratorUtil;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 public class Neo4jHelper {
     private Neo4jHelper() {
     }
 
-    public static GraphDatabaseService openGrapDb(String dbPath) {
+    public static GraphDatabaseService openGraphDb(String dbPath) {
         final GraphDatabaseService graphDb = new GraphDatabaseFactory()
                 .newEmbeddedDatabaseBuilder(dbPath)
                 .newGraphDatabase();

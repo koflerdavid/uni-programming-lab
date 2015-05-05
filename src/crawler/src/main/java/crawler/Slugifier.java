@@ -85,7 +85,7 @@ public class Slugifier {
     }
 
     public static void main(String... args) {
-        GraphDatabaseService graphDb = Neo4jHelper.openGrapDb(".");
+        GraphDatabaseService graphDb = Neo4jHelper.openGraphDb(".");
 
         Arrays.asList("Player", "Team", "Tournament")
                 .forEach(labelName -> slugifyUnsluggedNodes(graphDb, labelName, "slug", Arrays.asList("name", "nationality")));
