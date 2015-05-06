@@ -1,6 +1,4 @@
-var Promise = require('bluebird');
 var nodejs_simple = require('neo4j-simple');
-var assert = require('assert');
 
 exports.connection = Soccervis;
 
@@ -36,8 +34,9 @@ Soccervis.prototype.searchTournament = function (term) {
 
 Soccervis.prototype.getTeam = function (teamSlug) {
     var queryParts = [
-        'MATCH (team:Team)-[:CURRENT_TEAM]-(currentPlayer:Player)',
+        'MATCH (team:Team)',
         ' WHERE team.slug = {teamSlug}',
+        'OPTIONAL MATCH (team:Team)-[:CURRENT_TEAM]-(currentPlayer:Player)',
         'WITH team, collect(currentPlayer) AS currentPlayers',
 
         'OPTIONAL MATCH (team:Team)-->(leaving:Transfer)-->(toTeam:Team)',
@@ -205,85 +204,40 @@ Soccervis.prototype.searchTeam = function (name, yearEstablished, nation, tourna
         queryParts.push(conditions.join(' AND '));
     }
 
-    var playersQuery = queryParts.concat([
-        'MATCH (team:Team)-[:CURRENT_TEAM]-(currentPlayer:Player)',
-        'RETURN team, collect(currentPlayer) AS currentPlayers',
-        ' ORDER BY team.slug'
-    ]);
+    queryParts = queryParts.concat([
+        'OPTIONAL MATCH (team:Team)-[:CURRENT_TEAM]-(currentPlayer:Player)',
+        'WITH team, collect(currentPlayer) AS currentPlayers',
 
-    var transfersAwayQuery = queryParts.concat([
         'OPTIONAL MATCH (team:Team)-->(leaving:Transfer)-->(toTeam:Team)',
         'OPTIONAL MATCH (leaving:Transfer)--(leavingPlayer:Player)',
-        'WITH team.slug AS teamSlug, toTeam, leavingPlayer',
-        'RETURN teamSlug, collect({toTeam: toTeam, player: leavingPlayer}) AS leavingPlayers',
-        ' ORDER BY teamSlug'
-    ]);
+        'WITH team, currentPlayers, collect({to: toTeam, player: leavingPlayer}) AS leavingPlayers',
 
-    var transfersToQuery = queryParts.concat([
         'OPTIONAL MATCH (fromTeam:Team)-->(joining:Transfer)-->(team:Team)',
         'OPTIONAL MATCH (joining:Transfer)--(joiningPlayer:Player)',
-        'WITH team.slug AS teamSlug, fromTeam, joiningPlayer',
-        'RETURN teamSlug, collect({fromTeam: fromTeam, player: joiningPlayer}) AS joiningPlayers',
-        ' ORDER BY teamSlug'
+        'RETURN team, currentPlayers, [] as leavingPlayers, collect({from: fromTeam, player: joiningPlayer}) AS joiningPlayers',
+        ' ORDER BY team.name'
     ]);
 
-    this.graphdb().begin();
-    var that = this;
+    return this.graphdb()
+        .query(queryParts.join(' '), {}, parameters)
+        .getResults('team', 'currentPlayers', 'leavingPlayers', 'joiningPlayers')
+        .then(function (results) {
+            console.log(results);
+            return results.map(function (result) {
+                var team = result.team;
 
-    return Promise.join(this.graphdb().query(playersQuery.join(' '), {}, parameters).getResults('team', 'currentPlayers'),
-        this.graphdb().query(transfersAwayQuery.join(' '), {}, parameters).getResults('teamSlug', 'leavingPlayers'),
-        this.graphdb().query(transfersToQuery.join(' '), {}, parameters).getResults('teamSlug', 'joiningPlayers'))
-        .then(function (res) {
-            var teamResults = res[0],
-                leavesResults = res[1],
-                joinsResults = res[2];
+                var transfers = result.leavingPlayers.concat(result.joiningPlayers);
 
-            // The three result sets should be of the same length
-            assert.equal(teamResults.length, leavesResults.length);
-            assert.equal(teamResults.length, joinsResults.length);
+                team.players = result.currentPlayers;
+                // This is to filter out a dummy result which may occur because of the OPTIONAL MATCH clauses,
+                // when they match nothing, similar to as it happens for LEFT JOINs.
+                team.transfers = transfers.filter(function (transfer) {
+                    return transfer.player != null;
+                });
 
-            var results = [];
-            for (var i = 0, l = teamResults.length; i < l; ++i) {
-                var team = teamResults[i].team;
-                // Since the result sets are sorted after the team slug they should match
-                assert.equal(team.slug, joinsResults[i].teamSlug);
-                assert.equal(team.slug, leavesResults[i].teamSlug);
-
-                var joins = joinsResults[i].joiningPlayers || [];
-
-                var transfers = [];
-                // If there are no joins then Neo4j returns a single result with null as values.
-                // This is due to the OPTIONAL MATCH, which works like a LEFT JOIN
-                if (joins.length == 0 || joins[0].player != null) {
-                    transfers = joins.map(function (join) {
-                        return {
-                            'from': join.fromTeam,
-                            player: join.player
-                        };
-                    });
-                }
-
-                var leaves = leavesResults[i].leavingPlayers || [];
-                // If there are no leaves then Neo4j returns a single result with null as values.
-                // This is due to the OPTIONAL MATCH, which works like a LEFT JOIN
-                if (leaves.length == 0 || leaves[0].player != null) {
-                    for (var i in leaves) {
-                        var leave = leaves[i];
-                        transfers.push({
-                            to: leave.toTeam,
-                            player: leave.player
-                        });
-                    }
-                }
-
-                team.players = teamResults[i].players;
-                team.transfers = transfers;
-                results.push(team);
-            }
-
-            return results;
-        })
-    ;
+                return team;
+            });
+        });
 };
 
 Soccervis.prototype.getPlayersLeavingTeam = function (teamSlug) {
