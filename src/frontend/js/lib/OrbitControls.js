@@ -304,7 +304,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		var radius = offset.length() * scale;
 		if(this.zoomInfluencesRotateSpeed){
-		    this.rotateSpeed *= scale;
+		    this.rotateSpeed = 0.5*(radius/this.minDistance);
 		}
 
 		// restrict radius to be between desired limits
