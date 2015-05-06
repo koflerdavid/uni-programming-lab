@@ -228,20 +228,41 @@ public class Neo4jInserter {
         }
     }
 
+    public void completeTeamInformation() {
+        TeamCrawler teamCrawler = new TeamCrawler();
+        teamCrawler.onTeamCrawled(this::createTeam);
+
+        try (Transaction tx = graphDb.beginTx()) {
+            ResourceIterator<String> incompleteTeams = graphDb
+                    .execute("MATCH (team:Team) " +
+                            " WHERE team.slug IS NULL " +
+                            "RETURN team.uri as teamUri")
+                    .columnAs("teamUri");
+
+            incompleteTeams.forEachRemaining(teamUri -> teamCrawler.crawlTeamPage(new Team(teamUri, "")));
+
+            tx.success();
+        }
+    }
+
     public static void main(String[] args) {
         String dbPath = args[0];
+        String command = args[1];
 
         GraphDatabaseService graphDb = Neo4jHelper.openGraphDb(dbPath);
         Neo4jHelper.createSchema(graphDb);
         Neo4jInserter inserter = new Neo4jInserter(graphDb);
 
         try {
-            if (args.length > 2) {
-                inserter.crawlTournament(new Tournament(args[1], args[2]));
-            } else {
+            if ("tournament".equals(command)) {
+                inserter.crawlTournament(new Tournament(args[2], args[3]));
+            } else if ("all".equals(command)) {
                 String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
                 inserter.crawlWebsite(rootUri);
+            } else if ("fixTeams".equals(command)) {
+                inserter.completeTeamInformation();
             }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
