@@ -4,7 +4,7 @@ var Overlay = function(dom){
     self.dom = dom;
     this.createFunction = function(loc){
         return function(){
-            self.onSelect({type:'Teams',name:loc.name});
+            self.onSelect({type:'Teams',uid:loc.uid});
         }
     }
     this.updateTeamLocations = function(locs){

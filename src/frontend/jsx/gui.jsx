@@ -11,8 +11,7 @@ var IntelliSearch = React.createClass({
             </div>
             );
     },
-    onTextChange: function(text){
-        var self = this;
+    onTextChange: function(text){ var self = this;
         if(text==''){
             if(self.isMounted())
                 self.setState(self.getInitialState());
@@ -53,12 +52,12 @@ var SearchResult = React.createClass({
         Object.keys(this.props.result).forEach(function(category){
             var results = this[category];
             if(results && results.length > 0){
-                rows.push(<ResultCategory category={category} key={category} />);
+                rows.push(<ResultCategory category={category} key={category+"cat"} />);
                 results.forEach(function(entry){
                     entry.type = category;
-                    rows.push(<Result entry={entry} onSelect={self.props.onSelect} key={entry.uid}/>);
+                    rows.push(<Result entry={entry} onSelect={self.props.onSelect} key={entry.uid+category}/>);
                 });
-                rows.push(<Divider key={"dividerkey"}/>);
+                rows.push(<Divider key={category+"div"}/>);
             }
         },this.props.result);
         return (
@@ -131,7 +130,7 @@ var RowList = React.createClass({
         var entities = this.props.entities;
         entities.forEach(function(entity){
             entity.type=self.props.type;
-            rows.push(<SelectableRow entity={entity} name={entity.name} onSelected={self.props.onSelected}/>);
+            rows.push(<SelectableRow entity={entity} name={entity.name} onSelected={self.props.onSelected} key={entity.uid}/>);
         });
         return (
         <li className='list-group-item'>
@@ -151,7 +150,7 @@ var DetailView = React.createClass({
     },
     addRow:function(rows,name,data){
         if(data && data.length>0)
-            rows.push(<DetailRow name={name} data={data}/>);
+            rows.push(<DetailRow name={name} data={data} key={name}/>);
     },
     handleExit: function(){
         this.props.onSelected(null);
@@ -166,9 +165,10 @@ var DetailView = React.createClass({
         switch(selected.type){
             case 'Players':
                 this.addRow(rows,'Name',selected.name);
-                this.addRow(rows,'Age',selected.age.toString());
-                this.addRow(rows,'Nationality',selected.nationality);
-                this.addRow(rows,'Team',selected.team);
+                if(selected.details)
+                    Object.keys(selected.details).forEach(function(detailkey){
+                        self.addRow(rows,detailkey,selected.details[detailkey]);
+                    });
                 var teams = [];
                 var transfers = selected.transfers;
                 if(transfers&&transfers.length>0){
@@ -176,20 +176,17 @@ var DetailView = React.createClass({
                     transfers.forEach(function(transfer){
                         teams.push(transfer.to);
                     });
-                    rows.push(<RowList entities={teams} type="Teams" onSelected={this.props.onSelected}/>);
+                    rows.push(<RowList entities={teams} type="Teams" onSelected={this.props.onSelected} key={'teams'}/>);
                 }
                 break;
             case 'Teams':
                 this.addRow(rows,'Name',selected.name);
-                console.log(selected);
                 if(selected.details)
                     Object.keys(selected.details).forEach(function(detailkey){
-                        console.log(detailkey)
-                        console.log(selected.details[detailkey])
                         self.addRow(rows,detailkey,selected.details[detailkey]);
                     });
                 if(selected.players&&selected.players.length>0)
-                    rows.push(<RowList entities={selected.players} type="Players" onSelected={this.props.onSelected}/>);
+                    rows.push(<RowList entities={selected.players} type="Players" onSelected={this.props.onSelected} key={'players'}/>);
                 break;
             case 'Tournaments':
                 this.addRow(rows,'Name',selected.name);
@@ -243,22 +240,30 @@ var App = React.createClass({
         if(!e){
             if(self.isMounted())
                 self.setState(this.getInitialState());
-            window.globe.updateTransfers([]);
+            window.globe.updateTransfers(null,[]);
             return
         }
         $.getJSON("/"+this.staticURL[e.type]+'/'+e.uid, function(result){
             result.type = e.type;
             if(self.isMounted()){
                 var transfers = [];
+                var overlays = [];
+                console.log(result);
                 switch(e.type){
                     case 'Tournaments':
                         break;
                     case 'Teams':
+                        if(result.pos.length==2)
+                            overlays.push({name:result.name,uid:e.uid,pos:result.pos});
+                        transfers=result.transfers?result.transfers:[];
+                        break;
                     case 'Players':
+                        if(result.team)
+                            overlays.push({name:result.team.name,uid:result.team.uid,pos:result.team.loc});
                         transfers=result.transfers?result.transfers:[];
                         break;
                 }
-                window.globe.updateTransfers(transfers);
+                window.globe.updateTransfers(overlays,transfers);
                 self.setState({selected:result});
             }
         });

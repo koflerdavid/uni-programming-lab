@@ -190,8 +190,12 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         updateTeamLocations();
         stats.update();
     }
-    function initTeamLocations(transfers){
+    function initTeamLocations(overlays,transfers){
         var teams = {};
+        if(overlays)
+            overlays.forEach(function(t){
+                teams[t.name] = t;
+            });
         transfers.forEach(function(t){
             teams[t.from.name] = t.from;
             teams[t.to.name] = t.to;
@@ -231,14 +235,14 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
 
     return function(domElement){
         var self = this;
-        self.updateTransfers = function(transfers,updListener){
+        self.updateTransfers = function(overlays,transfers,updListener){
             if(transferGroup!=null)
                 scene.remove(transferGroup);
             transferGroup = new THREE.Group();
             var curves = generateTransfers(transferGroup,transfers);
             particles = new Particles(transferGroup,curves);
             scene.add(transferGroup);
-            initTeamLocations(transfers);
+            initTeamLocations(overlays,transfers);
             updateListener = updListener;
         };
         self.getTeamLocations = function(){
