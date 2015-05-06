@@ -144,8 +144,6 @@ def generateTeamTransfers():
 
     playersfile = open('data/players.dat','r')
     for num,line in enumerate(playersfile):
-        if num>20000:
-            break
         line = line[:-1]
         if len(line)>0:
             player = json.loads(line)
