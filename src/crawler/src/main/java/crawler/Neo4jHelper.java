@@ -74,6 +74,6 @@ public class Neo4jHelper {
     }
 
     public static enum SoccerRelationshipTypes implements RelationshipType {
-        IN_TOURNAMENT, CURRENT_TEAM, IN_TEAM
+        IN_TOURNAMENT, CURRENT_TEAM, IN_TEAM, FROM_TEAM, TO_TEAM, TRANSFERRED_PLAYER
     }
 }
