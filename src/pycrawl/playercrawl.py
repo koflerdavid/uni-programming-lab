@@ -36,10 +36,19 @@ def getPlayer(playerid):
     html = BeautifulSoup(page)
     root = html.find(id='cpm')
 
-    name = root.find('h1').stripped_strings.next()
+    h1 = root.find('h1')
+    if h1 is None:
+        warning("No header")
+        return None
+    try:
+        name = h1.stripped_strings.next()
+    except StopIteration:
+        warning("No header")
+        return None
     if 'Error' in name:
         warning("maybe 404'ed: "+str(playerid))
         return None
+
 
     details = {}
     lastAttr = None
@@ -49,9 +58,11 @@ def getPlayer(playerid):
             if row.parent.parent.parent != clubinfo and row.parent.parent.parent.parent != clubinfo:
                 #print('SKIP: '+str(row))
                 continue
+            rownum+=1
+            if row.name == 'th' and rownum%2==1:
+                rownum+=1
             #else:
             #print(row)
-            rownum+=1
             raw = row.string
             if raw is None or len(raw.strip())<=1:
                 continue
@@ -61,7 +72,6 @@ def getPlayer(playerid):
                 details[lastAttr] = u''
             elif lastAttr is not None:
                 details[lastAttr] += raw+u' '
-    #print(details)
     toRemove = []
     for key in details:
         if len(details[key])==0:
@@ -72,7 +82,12 @@ def getPlayer(playerid):
     teams = []
     career = root.find('table',{'class':'career'})
     if career is not None:
-        for row in career.find_all('tr',{'class':'alt'}):
+        for row in career.find('tbody').find_all('tr'):
+            try:
+                if len(row['class'])>0 and row['class'][0]=='total':
+                    continue
+            except KeyError:
+                pass
             link = row.find('a')
             team = Object()
             team.name = link.string
@@ -86,6 +101,7 @@ def getPlayer(playerid):
             for column in row.find_all('td'):
                 if column.string is not None:
                     team.details.append(column.string.strip())
+            #print(team.to_JSON())
 
             teams.append(team)
     #if len(teams)==0:
@@ -95,30 +111,21 @@ def getPlayer(playerid):
     player.name = name
     player.id = playerid
     player.teams = teams
+    player.details = details
     return player
 
-class dummyf:
-    def write(self,bla):
-        pass
-    def close(self):
-        pass
-    def __iter__(self):
-        return self
-    def next(self):
-        raise StopIteration
-
 parsed = 1
-if os.path.exists('players.dat'):
-    f = open('players.dat','r+')
+if os.path.exists('data/players.dat'):
+    f = open('data/players.dat','r+')
     for line in f:
         line = line[:-1]
         #print(line)
         parsed+=1
     f.close()
-f = open('players.dat','a+')
+f = open('data/players.dat','a+')
 #f = dummyf()
 try:
-    for i in range(parsed,70000):
+    for i in range(parsed,90000):
         player = getPlayer(i)
         if player is None:
             f.write('\n')

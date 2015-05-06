@@ -118,28 +118,88 @@ def findTeamLocation(teamwithvenue,teamwithlocation,teamname):
     return None
 
 
+def generateTeamTransfers():
+    transfers = {}
+    def genTransfer():
+        return {
+                'bought':{},
+                'sold':{}
+                }
+
+    def addTransfer(fro,to):
+        if not to in fro:
+            fro[to] = 1
+        else:
+            fro[to] +=1
+
+    def insertTransfer(fro,to):
+        fro = str(fro)
+        to = str(to)
+        if not fro in transfers:
+            transfers[fro] = genTransfer()
+        if not to in transfers:
+            transfers[to] = genTransfer() 
+        addTransfer(transfers[fro]['sold'],to)
+        addTransfer(transfers[to]['bought'],fro)
+
+    playersfile = open('data/players.dat','r')
+    for num,line in enumerate(playersfile):
+        if num>20000:
+            break
+        line = line[:-1]
+        if len(line)>0:
+            player = json.loads(line)
+            teams = player['teams']
+            for i in range(len(teams)-1):
+                if(teams[i]['uid']!=teams[i+1]['uid']):
+                    insertTransfer(teams[i]['uid'],teams[i+1]['uid'])
+    playersfile.close()
+
+    transfersfile = open('data/teamtransfers.dat','w')
+    for i in range(1,7000):
+        if str(i) in transfers:
+            transfersfile.write(json.dumps(transfers[str(i)])+'\n')
+        else:
+            transfersfile.write('\n')
+    transfersfile.close()
+
 def findlocs():
-    # load a list of entities which have a location
-    teamwithlocation = getJSON(wikidataquery,{'q':'CLAIM[31:476028] AND CLAIM[625]','props':'625'})
-    teamwithvenue = getJSON(wikidataquery,{'q':'CLAIM[31:476028] AND NOCLAIM[625] AND CLAIM[115]','props':'115'})
-    #print(entitieswithloc)
     foundlocs = []
     numfoundlocs = 0
 
     teamsfile = open('teams.dat','r')
     locfile = open('locs.dat','a+')
     parsedlocsnum = 0
+    '''
     for line in locfile:
         if len(line)>1:
             numfoundlocs+=1
             tmp = json.loads(line)
         parsedlocsnum+=1
+    '''
+    if(parsedlocsnum<6998):
+        # load a list of entities which have a location
+        teamwithlocation = getJSON(wikidataquery,{'q':'CLAIM[31:476028] AND CLAIM[625]','props':'625'})
+        teamwithvenue = getJSON(wikidataquery,{'q':'CLAIM[31:476028] AND NOCLAIM[625] AND CLAIM[115]','props':'115'})
+
     for i,line in enumerate(teamsfile):
-        if i<parsedlocsnum:
-            continue
+
+
+        locline = locfile.readline()
+        locline = locline[:-1]
         line = line[:-1]
         if len(line) != 0:
-            teamname = json.loads(line)['name']
+            teamjson = json.loads(line)
+            teamname = teamjson['name']
+
+
+            if len(locline)==0:
+                if 'Address' in teamjson:
+                    numfoundlocs +=1
+                    print(teamname)
+            continue
+
+
             try:
                 loc = findTeamLocation(teamwithvenue,teamwithlocation,teamname)
                 if loc is not None:
@@ -150,30 +210,34 @@ def findlocs():
                     continue
             except IOError, e:
                 break
+        
+        continue
+
+
         foundlocs.append(None)
         locfile.write('\n')
         print('['+str(i+1)+'] No location found for '+str(teamname))
     locfile.close()
     teamsfile.close()
     success('Found '+str(numfoundlocs)+' addresses')
+    print(loc)
 
-parsed = 1
-hasloc = 0
-if os.path.exists('teams.dat'):
-    f = open('teams.dat','r+')
-    for line in f:
-        line = line[:-1]
-        parsed+=1
-        if len(line)==0:
-            continue
-        tmp = json.loads(line)['details']
-        if 'Ground' in tmp or 'Address' in tmp:
-            hasloc+=1
-    f.close()
-print(str(hasloc)+'/'+str(parsed-1)+' have an address')
-f = open('teams.dat','a+')
-#f = dummyf()
-try:
+def getteams():
+    parsed = 1
+    hasloc = 0
+    if os.path.exists('data/teams.dat'):
+        f = open('data/teams.dat','r+')
+        for line in f:
+            line = line[:-1]
+            parsed+=1
+            if len(line)==0:
+                continue
+            tmp = json.loads(line)['details']
+            if 'Ground' in tmp or 'Address' in tmp:
+                hasloc+=1
+        f.close()
+    print(str(hasloc)+'/'+str(parsed-1)+' had an address')
+    f = open('data/teams.dat','a+')
     for i in range(parsed,7000):
         team = getTeam(i)
         if team is None:
@@ -183,7 +247,10 @@ try:
         f.write(teamstr+'\n')
         print('['+str(i)+'] '+teamstr)
     f.close()
-    findlocs()
-    #geocodeteams()
+
+try:
+    getteams()
+    #findlocs()
+    generateTeamTransfers()
 except KeyboardInterrupt:
     f.close()
