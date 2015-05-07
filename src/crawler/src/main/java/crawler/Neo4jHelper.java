@@ -1,9 +1,6 @@
 package crawler;
 
-import org.neo4j.graphdb.DynamicLabel;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.schema.ConstraintDefinition;
 import org.neo4j.graphdb.schema.ConstraintType;
@@ -11,13 +8,12 @@ import org.neo4j.helpers.collection.IteratorUtil;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 public class Neo4jHelper {
     private Neo4jHelper() {
     }
 
-    public static GraphDatabaseService openGrapDb(String dbPath) {
+    public static GraphDatabaseService openGraphDb(String dbPath) {
         final GraphDatabaseService graphDb = new GraphDatabaseFactory()
                 .newEmbeddedDatabaseBuilder(dbPath)
                 .newGraphDatabase();
@@ -75,5 +71,9 @@ public class Neo4jHelper {
 
             tx.success();
         }
+    }
+
+    public static enum SoccerRelationshipTypes implements RelationshipType {
+        IN_TOURNAMENT, CURRENT_TEAM, IN_TEAM, FROM_TEAM, TO_TEAM, TRANSFERRED_PLAYER
     }
 }

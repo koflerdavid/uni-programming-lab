@@ -22,16 +22,18 @@ var soccervisConnection = new soccervis.connection(neo4j_host);
 
 app.use(express.static(__dirname)).listen(port);
 
-app.get('/tournaments', function (req, res) {
-    // Gets all tournaments
+app.get('/tournament', function (req, res) {
     soccervisConnection
-        .getTournaments()
+        .searchTournament(req.query.name)
         .then(function (tournaments) {
-            res.send(JSON.stringify(tournaments));
+            res.json(tournaments);
         }, function (error) {
-            res.statusCode = 500;
-            res.send(JSON.stringify(error));
+            res.status(500).json(error);
         });
+
+    //if (res.query != null && res.query.name != null) {
+
+    //}
 });
 
 app.get('/team', function (req, res) {
@@ -39,7 +41,7 @@ app.get('/team', function (req, res) {
     soccervisConnection
         .searchTeam(req.query.name, req.query.year, req.query.nation, req.query.tournament)
         .then(function (teams) {
-            res.send(JSON.stringify(teams));
+            res.json(teams);
         });
 });
 
@@ -49,10 +51,9 @@ app.get('/team/:team', function (req, res) {
         .getTeam(req.params.team)
         .then(function (team) {
             if (team == null) {
-                res.statusCode = 404;
-                res.send(null);
+                res.status(404).json(null);
             } else {
-                res.send(JSON.stringify(team));
+                res.json(team);
             }
         });
 });
@@ -62,7 +63,7 @@ app.get('/team/:team/transfers', function (req, res) {
     soccervisConnection
         .getTeamTransfers(req.params.team)
         .then(function (transfers) {
-            res.send(JSON.stringify(transfers));
+            res.json(transfers);
         });
 });
 
@@ -71,7 +72,7 @@ app.get('/team/:team/transfers/from', function (req, res) {
     soccervisConnection
         .getPlayersLeavingTeam(req.params.team)
         .then(function (transfers) {
-            res.send(JSON.stringify(transfers));
+            res.json(transfers);
         });
 });
 
@@ -80,7 +81,7 @@ app.get('/team/:team/transfers/to', function (req, res) {
     soccervisConnection
         .getPlayersJoiningTeam(req.params.team)
         .then(function (transfers) {
-            res.send(JSON.stringify(transfers));
+            res.json(transfers);
         });
 });
 
@@ -89,7 +90,7 @@ app.get('/player', function (req, res) {
     soccervisConnection
         .searchPlayer(req.query.name, req.query.year, req.query.nation, req.query.tournament, req.query.team)
         .then(function (players) {
-            res.send(JSON.stringify(players));
+            res.json(players);
         });
 });
 
@@ -99,10 +100,9 @@ app.get('/player/:player', function (req, res) {
         .getPlayer(req.params.player)
         .then(function (player) {
             if (player == null) {
-                res.statusCode = 404;
-                res.send(null);
+                res.status(404).json(null);
             } else {
-                res.send(JSON.stringify(player));
+                res.json(player);
             }
         });
 });
@@ -112,25 +112,26 @@ app.get('/player/:player/transfers', function (req, res) {
     soccervisConnection
         .getTeamTransfers(req.params.player)
         .then(function (transfers) {
-            res.send(JSON.stringify(transfers));
+            res.json(transfers);
         });
 });
 
-app.get('/search/:term', function (req, res) {
+app.get('/search/', function (req, res) {
     // Look for tournaments, teams and players
-    var term = req.params.term;
+    var term = req.query.text;
 
     Promise.join(
-        soccervisConnection.simpleTournamentSearch(term),
+        soccervisConnection.searchTournament(term),
         soccervisConnection.simpleTeamSearch(term),
         soccervisConnection.simplePlayerSearch(term)
     )
-        .then(function (tournaments, teams, players) {
-            res.send(JSON.stringify({
-                tournaments: tournaments,
-                teams: teams,
-                players: players
-            }));
+        .then(function (results) {
+            var result = {
+                Tournaments: results[0],
+                Teams: results[1],
+                Players: results[2]
+            };
+            res.json(result);
         });
 });
 
@@ -149,4 +150,8 @@ function paramToDate(query, paramName) {
     }
 
     return null;
+}
+
+function isObjectEmpty(object) {
+    return Object.getOwnPropertyNames(object).length === 0;
 }

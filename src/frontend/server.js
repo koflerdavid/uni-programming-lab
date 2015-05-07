@@ -27,34 +27,33 @@ app.get('/search', function (req, res) {
     var tournaments = initArr('Tournament');
     var players = initArr('Player');
     var teams = initArr('Team');
-    res.send(JSON.stringify({
+    res.json({
         Tournaments: tournaments,
         Players:players,
         Teams:teams
-    }));
+    });
 });
 
 app.get('/tournaments', function (req, res) {
     // Gets all tournaments
     soccervisConnection.getTournaments()
         .then(function (tournaments) {
-            res.send(JSON.stringify(tournaments));
+            res.json(tournaments);
         }, function (error) {
-            res.statusCode = 500;
-            res.send(JSON.stringify(error));
+            res.status(500).json(error);
         });
 });
 
 app.get('/tournament', function (req, res) {
     var name = req.query.name;
-    res.send(JSON.stringify({
+    res.json({
         name: name,
         date:"2015",
         teams:[
             {name:'team1',uid:'team1'},
             {name:'team2',uid:'team2'}
         ]
-    }));
+    });
 });
 
 app.get('/team', function (req, res) {
@@ -63,7 +62,7 @@ app.get('/team', function (req, res) {
     var man = {name:'Manchester',uid:'man',pos:[-2.242631, 53.480759]};
     var ibk = {name:'Innsbruck',uid:'ibk',pos:[11.404102, 47.269212]};
     var rapid = {name:'Wien',uid:'vie',pos:[16.373819, 48.208174]};
-    res.send(JSON.stringify({
+    res.json({
         name: name,
         trainer: 'Best trainer',
         yearformed: 2015,
@@ -95,7 +94,7 @@ app.get('/team', function (req, res) {
                 strength: 5
             }
         ]
-    }));
+    });
 });
 
 app.get('/team/:team', function (req, res) {
@@ -103,10 +102,9 @@ app.get('/team/:team', function (req, res) {
     soccervisConnection.getTeam(req.params.team)
         .then(function (team) {
             if (team == null) {
-                res.statusCode = 404;
-                res.send(null);
+                res.status(404).json(null);
             } else {
-                res.send(JSON.stringify(team));
+                res.json(team);
             }
         });
 });
@@ -128,12 +126,12 @@ app.get('/player', function (req, res) {
     var barce = {name:'Barce',uid:'Barce',pos:[-15.132555052631583,11.908241315789475]};
     var man = {name:'Manchester',uid:'man',pos:[11.88548080645161,-0.5387664516129034]};
     var ibk = {name:'Innsbruck',uid:'ibk',pos:[159.8473874324324,-8.792477783783786]};
-    res.send(JSON.stringify({
+    res.json([{
         name: name,
-        team:'ASdasd',
-        age:12,
-        nationality:'Austria',
-        transfers:[
+        team: 'ASdasd',
+        age: 12,
+        nationality: 'Austria',
+        transfers: [
             {
                 from: barce,
                 to: man,
@@ -145,7 +143,7 @@ app.get('/player', function (req, res) {
                 strength: 5
             }
         ]
-    }));
+    }]);
 });
 
 app.get('/player/:player', function (req, res) {
@@ -153,10 +151,9 @@ app.get('/player/:player', function (req, res) {
     soccervisConnection.getPlayer(req.params.player)
         .then(function (player) {
             if (player == null) {
-                res.statusCode = 404;
-                res.send(null);
+                res.status(404).send(null);
             } else {
-                res.send(JSON.stringify(player));
+                res.json(player);
             }
         });
 });
