@@ -37,7 +37,7 @@ public class PlayerCrawler {
 
 	public boolean crawlPlayerPage(Player player) {
 		String uri = player.getUri();
-		LinkedHashSet<Contract> contracts = new LinkedHashSet<Contract>();
+		LinkedHashSet<Contract> contracts = new LinkedHashSet<>();
         SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM, YY");
 
 		try {
