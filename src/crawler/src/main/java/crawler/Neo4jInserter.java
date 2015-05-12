@@ -194,7 +194,7 @@ public class Neo4jInserter {
 
         graphDb.execute("MATCH (team:Team) RETURN team.uri AS uri").forEachRemaining(row -> {
             Team team = new Team((String) row.get("uri"), (String) row.get("name"));
-            teamCrawler.crawlTeamPage(team);
+            teamCrawler.crawlTeamPage(team.getUri(), team);
         });
     }
 
@@ -220,7 +220,7 @@ public class Neo4jInserter {
         TournamentCrawler tournamentCrawler = getTournamentCrawler(teamCrawler);
 
         try {
-            tournamentCrawler.crawlTournamentPage(tournament);
+            tournamentCrawler.crawlTournamentPage(tournament.getUri(), tournament);
             return tournament;
 
         } catch (IOException e) {
@@ -239,7 +239,7 @@ public class Neo4jInserter {
                             "RETURN team.uri as teamUri")
                     .columnAs("teamUri");
 
-            incompleteTeams.forEachRemaining(teamUri -> teamCrawler.crawlTeamPage(new Team(teamUri, "")));
+            incompleteTeams.forEachRemaining(teamCrawler::crawlTeamPage);
 
             tx.success();
         }
@@ -255,7 +255,7 @@ public class Neo4jInserter {
 
         try {
             if ("tournament".equals(command)) {
-                inserter.crawlTournament(new Tournament(args[2], args[3]));
+                inserter.crawlTournament(new Tournament(args[2], args.length > 3 ? args[3] : ""));
             } else if ("all".equals(command)) {
                 String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
                 inserter.crawlWebsite(rootUri);

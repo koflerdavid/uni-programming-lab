@@ -20,7 +20,7 @@ public class TeamCrawler {
     private ArrayList<Consumer<Team>> onTeamCrawledListeners = new ArrayList<>();
 
     public void crawlAllTeamPages(Collection<Team> teams) {
-        teams.forEach(this::crawlTeamPage);
+        teams.forEach(team -> crawlTeamPage(team.getUri(), team));
 	}
 
     public void onTeamCrawled(Consumer<Team> listener) {
@@ -33,9 +33,17 @@ public class TeamCrawler {
         }
     }
 
-	public boolean crawlTeamPage(Team team) {
-		String uri = team.getUri();
-		System.err.println("Crawling team page: " + team.getName());
+    public Team crawlTeamPage(String uri) {
+        Team team = new Team(uri, "");
+        if (crawlTeamPage(uri, team)) {
+            return team;
+        }
+
+        return team;
+    }
+
+	public boolean crawlTeamPage(String uri, Team team) {
+		System.err.println("Crawling team page: " + uri);
 
 		try {
 			Thread.sleep(Utils.HTTP_SLEEP);
@@ -47,6 +55,7 @@ public class TeamCrawler {
 					.timeout(Utils.HTTP_TIMEOUT).get();
 
             String[] parts = doc.getElementsByTag("h1").text().split(" Club details", 2);
+            team.setUri(uri);
             team.setName(parts[0]);
 
 			// Get all the data by iterating through the club info box
@@ -192,9 +201,6 @@ public class TeamCrawler {
 
 	public static void main(String[] args) {
 		TeamCrawler tc = new TeamCrawler();
-		Team t = new Team(
-				"http://www.soccerbase.com/teams/team.sd?team_id=536",
-				"Aston la");
-		tc.crawlTeamPage(t);
+		tc.crawlTeamPage("http://www.soccerbase.com/teams/team.sd?team_id=536");
 	}
 }

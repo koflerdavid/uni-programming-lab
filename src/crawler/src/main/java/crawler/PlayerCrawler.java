@@ -31,18 +31,28 @@ public class PlayerCrawler {
         }
     }
 
-	public void crawlAllPlayerPages(Collection<Player> players) {
-        players.forEach(this::crawlPlayerPage);
-	}
+    public void crawlAllPlayerPages(Collection<Player> players) {
+        players.forEach(player -> crawlPlayerPage(player.getUri(), player));
+    }
 
-	public boolean crawlPlayerPage(Player player) {
-		String uri = player.getUri();
-		LinkedHashSet<Contract> contracts = new LinkedHashSet<Contract>();
+    public Player crawlPlayerPage(String uri) {
+        Player player = new Player(uri, "");
+
+        if (crawlPlayerPage(uri, player)) {
+            return player;
+        }
+
+        return null;
+    }
+
+	public boolean crawlPlayerPage(String uri, Player player) {
+		LinkedHashSet<Contract> contracts = new LinkedHashSet<>();
         SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM, YY");
 
-		try {
-			Thread.sleep(Utils.HTTP_SLEEP);
-			System.err.println("Crawling player page: " + player.getName());
+        System.err.println("Crawling player page " + uri);
+
+        try {
+            Thread.sleep(Utils.HTTP_SLEEP);
 			Document doc = Jsoup
 					.connect(uri)
 					.userAgent(
@@ -58,26 +68,31 @@ public class PlayerCrawler {
 			// System.out.println("----------------");
 			// }
 
+            player.setUri(uri);
+
 			// get player name and number
 			Element e = it.next();
 			if (e.text().contains(".")) {
                 String[] parts = e.text().split("\\. ");
                 player.setNumber(Integer.parseInt(parts[0]));
-                player.setName(parts[1]);
 			} else {
 				player.setNumber(-1);
 			}
+
 			System.out.println("Number: " + player.getNumber());
-			System.out.println("Name: " + player.getName());
 
 			// get player position
 			e = it.next();
 			player.setPosition(e.text().split(" ")[0]);
 			System.out.println("Position: " + player.getPosition());
 
-			// get age
+            // Get name
 			e = it.next();
-			e = it.next();
+            player.setName(e.text().substring(10));
+            System.out.println("Name: " + player.getName());
+
+            // get age
+            e = it.next();
 			if (e.text().length() >= 4) {
 				player.setAge(Integer.parseInt(e.text().substring(4,
 						e.text().indexOf("(") - 1)));
@@ -219,9 +234,6 @@ public class PlayerCrawler {
 		// Player p = new Player(
 		// "http://www.soccerbase.com/players/player.sd?player_id=46629",
 		// "Brad Guzan");
-		Player p = new Player(
-				"http://www.soccerbase.com/players/player.sd?player_id=39937",
-				"Gerard Pique");
-		pc.crawlPlayerPage(p);
+		pc.crawlPlayerPage("http://www.soccerbase.com/players/player.sd?player_id=39937");
 	}
 }
