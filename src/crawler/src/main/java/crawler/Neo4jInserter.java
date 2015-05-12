@@ -255,7 +255,7 @@ public class Neo4jInserter {
 
         try {
             if ("tournament".equals(command)) {
-                inserter.crawlTournament(new Tournament(args[2], args[3]));
+                inserter.crawlTournament(new Tournament(args[2], args.length > 3 ? args[3] : ""));
             } else if ("all".equals(command)) {
                 String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
                 inserter.crawlWebsite(rootUri);
