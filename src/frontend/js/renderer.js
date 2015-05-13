@@ -112,6 +112,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             var from = latlongToXYZ(transfer.from.pos);
             var to = latlongToXYZ(transfer.to.pos);
             var normal = from.clone();
+            var col = transfer.isIngoing?0x0000ff:0xff0000;
             normal.sub(to);
             var mid = slerp(from,to,0.5);
             mid.multiplyScalar(globalScale*(1.0+(normal.length()/globalScale)/5));
@@ -127,10 +128,11 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             curves.push({
                 points:geometry.vertices,
                 strength:Math.max(1,transfer.strength*curve.getLength()/10),
-                length:curve.getLength()*2
+                length:curve.getLength()*2,
+                color:col
             });
             var material = new THREE.LineBasicMaterial( {
-                color : 0xff0000,
+                color : col,
                 opacity:0.5,
                 transparent:true,
                 //linewidth: Math.random()*5,

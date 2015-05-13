@@ -1,4 +1,9 @@
 var IntelliSearch = React.createClass({
+    newtimeout: function(fun){
+        if(this.timeout!=null)
+            clearTimeout(this.timeout);
+        this.timeout = setTimeout(fun,1000);
+    },
     onSelect: function(e){
         this.onTextChange('');
         this.props.onSelect(e);
@@ -17,10 +22,12 @@ var IntelliSearch = React.createClass({
                 self.setState(self.getInitialState());
             return;
         }
-        $.getJSON('/search?text='+text, function(result){
-            if(self.isMounted()){
-                self.setState({result:result,startText:text});
-            }
+        this.newtimeout(function(){
+            $.getJSON('/search?text='+text, function(result){
+                if(self.isMounted()){
+                    self.setState({result:result,startText:text});
+                }
+            });
         });
     },
     getInitialState: function(){
@@ -39,7 +46,7 @@ var SearchBar = React.createClass({
         this.props.onTextChange(this.refs.searchText.getDOMNode().value);
     },
     render: function(){
-        return (<input type='text' value={this.props.startText} placeholder='Search...' ref='searchText' onChange={this.handleChange} className='form-control'/>);
+        return (<input type='text' placeholder='Search...' ref='searchText' onChange={this.handleChange} className='form-control'/>);
     }
 });
 var SearchResult = React.createClass({

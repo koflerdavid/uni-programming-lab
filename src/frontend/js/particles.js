@@ -4,29 +4,49 @@ var Particles = function(scene,curves) {
     self.curves = curves;
     self.particles = [];
     self.init = function(){
-        var material = new THREE.PointCloudMaterial({
+        /*var material = new THREE.PointCloudMaterial({
             color: 0xff0000,
             size:20,
             blending: THREE.AdditiveBlending,
             sizeAttenuation: false,
             transparent:true,
             depthWrite:false,
-            map:THREE.ImageUtils.loadTexture('img/particle2.png')});
+            map:THREE.ImageUtils.loadTexture('img/particle2.png')});*/
+        var shader = Shaders.particles;
+        var uniforms = {
+            texture: {type:'t', value: THREE.ImageUtils.loadTexture('img/particle2.png')}
+        };
+        var attributes = {
+            customColor: { type: 'c', value:[] }
+        };
+        var shmaterial = new THREE.ShaderMaterial({
+            attributes: attributes,
+            uniforms: uniforms,
+            vertexShader:shader.vertexShader,
+            fragmentShader:shader.fragmentShader,
+            blending: THREE.AdditiveBlending,
+            depthWrite:false,
+            transparent:true,
+        });
+
+
         var geometry = new THREE.Geometry();
         var verts = geometry.vertices;
         for(var i=0;i<self.curves.length;i++){
             var curve = self.curves[i];
             var length = curve.length;
             var offset = Math.random()*length;
+            var col = new THREE.Color(curve.color);
             for(var j=0;j<curve.strength;j++){
                 verts.push(curve.points[0]);
+                attributes.customColor.value.push(col);
                 self.particles.push({
                     curveIndex:i,
                     position:((j/curve.strength)*length+offset)%length
                 });
             }
         }
-        self.pointCloud = new THREE.PointCloud( geometry, material);
+        self.pointCloud = new THREE.PointCloud( geometry, shmaterial);
         self.scene.add(self.pointCloud);
     }
     self.update = function() {

@@ -115,6 +115,7 @@ app.get('/team/:team', function (req, res) {
                     transfers.push({
                         from:from,
                         to:teamdetails,
+                        isIngoing:true,
                         strength:t.bought[bought[i]]
                     });
             }
