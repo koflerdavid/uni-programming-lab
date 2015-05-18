@@ -12,8 +12,8 @@ graph = Graph()
 if len(sys.argv) > 1 and sys.argv[1] == "force":
     teams = graph.cypher.execute("MATCH (n:Team) WHERE n.name IS NOT NULL RETURN n.slug, n.ground")
 else:
-    teams = graph.cypher.execute("MATCH (n:Team) WHERE n.name IS NOT NULL AND (n.lng IS NULL OR n.lat IS NULL) RETURN n.slug, n.ground")
-    #teams = graph.cypher.execute("MATCH (n:Team) RETURN n.name, n.ground, n.slug")
+    #teams = graph.cypher.execute("MATCH (n:Team) WHERE n.name IS NOT NULL AND (n.lng IS NULL OR n.lat IS NULL) RETURN n.name, n.ground, n.slug")
+    teams = graph.cypher.execute("MATCH (n:Team) RETURN n.name, n.ground, n.slug")
 print teams
 
 # perform geocoding query for every stadium
