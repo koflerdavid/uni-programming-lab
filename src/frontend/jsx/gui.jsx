@@ -5,25 +5,37 @@ var IntelliSearch = React.createClass({
         this.timeout = setTimeout(fun,1000);
     },
     onSelect: function(e){
-        this.onTextChange('');
+        this.setState(this.getInitialState());
         this.props.onSelect(e);
     },
     render: function(){
+        var style ={
+            pointerEvents:'auto',
+            minHeight:this.state.showLoading?'9rem':'4rem'
+        }
         return (
-            <div>
+            <div style={style}>
                 <SearchBar onTextChange={this.onTextChange} startText={this.state.startText}/>
+                <LoadingBar showLoading ={this.state.showLoading}/>
                 <SearchResult result={this.state.result} onSelect={this.onSelect} visible={this.state.startText!=''}/>
             </div>
             );
     },
     onTextChange: function(text){ var self = this;
+        if(!self.isMounted())
+            return;
         if(text==''){
-            if(self.isMounted())
-                self.setState(self.getInitialState());
+            if(self.timeout!=null)
+                clearTimeout(self.timeout);
+            self.setState({startText:'',showLoading:false});
             return;
         }
+        var state = self.getInitialState();
+        state.showLoading = true;
+        self.setState(state);
         this.newtimeout(function(){
             $.getJSON('/search?text='+text, function(result){
+                self.setState({showLoading:false});
                 if(self.isMounted()){
                     self.setState({result:result,startText:text});
                 }
@@ -37,8 +49,16 @@ var IntelliSearch = React.createClass({
                 Players:[],
                 Teams:[],
             },
-            startText:''
+            startText:'',
+            showLoading:false
         };
+    }
+});
+var LoadingBar = React.createClass({
+    render: function(){
+        if(this.props.showLoading)
+            return (<div><img src="img/ajax-loader.gif" className="loading"/></div>);
+        return <div/>
     }
 });
 var SearchBar = React.createClass({
@@ -202,8 +222,12 @@ var DetailView = React.createClass({
                     rows.push(<RowList entities={selected.teams} type="Teams" onSelected={this.props.onSelected}/>);
                 break;
         }
+        var style = {
+            overflow:'auto',
+            pointerEvents:'auto'
+        }
         return (
-            <div className={"panel panel-"+this.staticLABELS[selected.type]+" panel-transparent"}>
+            <div className={"panel panel-"+this.staticLABELS[selected.type]+" panel-transparent"} style={style}>
                 <div className="panel-heading">
                     <button type="button" className="btn btn-default btn-sm pull-right" onClick={this.handleExit}>
                         <span className="glyphicon glyphicon-remove" aria-hidden="true"></span>
@@ -230,15 +254,23 @@ var App = React.createClass({
         var style ={
             position:'absolute',
             right:'0px',
-            margin:'20px',
             width:'20%',
-            zIndex:1
+            zIndex:1,
+            display:'flex',
+            flexDirection:'column',
+            height:'100%',
+            paddingTop:'2rem',
+            paddingRight:'2rem',
+            pointerEvents:'none'
+        }
+        var style2 ={
+            flex:'1',
         }
         return (
         <div style={style}>
             <IntelliSearch onSelect={this.onSelect} />
-            <br/>
             <DetailView selected={this.state.selected} onSelected={this.onSelect} />
+            <div style={style2}></div>
         </div>
         )
     },

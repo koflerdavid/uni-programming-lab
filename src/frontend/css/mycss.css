@@ -7,8 +7,8 @@ body {
     height: auto;
     max-height: 200px;
     overflow-x: hidden;
+    right:2rem;
     display: inline;
-    width: 100%;
     top:auto;
 }
 .scrollable-menu {
@@ -52,4 +52,12 @@ body {
     padding: 4px;
     border-radius: 10px;
     cursor:pointer;
+}
+
+.loading {
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+    margin-top:1rem;
+    margin-bottom:1rem;
 }
