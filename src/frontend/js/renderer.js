@@ -112,6 +112,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             var from = latlongToXYZ([transfer.from.lng, transfer.from.lat]);
             var to = latlongToXYZ([transfer.to.lng, transfer.to.lat]);
             var normal = from.clone();
+            var col = transfer.isIngoing?0x0000ff:0xff0000;
             normal.sub(to);
             var mid = slerp(from,to,0.5);
             mid.multiplyScalar(globalScale*(1.0+(normal.length()/globalScale)/5));
@@ -127,10 +128,11 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             curves.push({
                 points:geometry.vertices,
                 strength:Math.max(1,transfer.strength*curve.getLength()/10),
-                length:curve.getLength()*2
+                length:curve.getLength()*2,
+                color:col
             });
             var material = new THREE.LineBasicMaterial( {
-                color : 0xff0000,
+                color : col,
                 opacity:0.5,
                 transparent:true,
                 //linewidth: Math.random()*5,
@@ -190,8 +192,12 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         updateTeamLocations();
         stats.update();
     }
-    function initTeamLocations(transfers){
+    function initTeamLocations(overlays,transfers){
         var teams = {};
+        if(overlays)
+            overlays.forEach(function(t){
+                teams[t.name] = t;
+            });
         transfers.forEach(function(t){
             teams[t.from.name] = t.from;
             teams[t.to.name] = t.to;
@@ -231,14 +237,14 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
 
     return function(domElement){
         var self = this;
-        self.updateTransfers = function(transfers,updListener){
+        self.updateTransfers = function(overlays,transfers,updListener){
             if(transferGroup!=null)
                 scene.remove(transferGroup);
             transferGroup = new THREE.Group();
             var curves = generateTransfers(transferGroup,transfers);
             particles = new Particles(transferGroup,curves);
             scene.add(transferGroup);
-            initTeamLocations(transfers);
+            initTeamLocations(overlays,transfers);
             updateListener = updListener;
         };
         self.getTeamLocations = function(){
