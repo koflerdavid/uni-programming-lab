@@ -1,20 +1,18 @@
 var express = require('express');
-var soccervis = require('./js/soccervis');
+var byline = require('byline');
+var unzip = require('unzip');
+var fs = require('fs');
 
-var port = 8080;
-var neo4j_host = 'http://localhost:7474';
+var port = process.env.PORT || 8080;
 
 console.log("Starting server on 'localhost:" + port + "'");
 
 var app = express();
-var soccervisConnection = new soccervis.connection(neo4j_host);
 
 app.use(express.static(__dirname)).listen(port);
 
 app.get('/search', function (req, res) {
-    var searchText = req.query.text;
-    //TODO use searchtext to filter all tournaments/players/teams
-    //the output just look like this:
+    var searchText = req.query.text.toLowerCase();
     var initArr = function(name){
         var arr = [];
         var l =(Math.random()*10)|0;
@@ -23,141 +21,204 @@ app.get('/search', function (req, res) {
             arr.push({name:str,uid:str})
         }
         return arr;
-    };
+    }
     var tournaments = initArr('Tournament');
-    var players = initArr('Player');
-    var teams = initArr('Team');
-    res.json({
-        Tournaments: tournaments,
+    var teams = [];
+    for(var i =0;i<allteams.length;i++){
+        team = allteams[i];
+        if(team.namelowercase && team.namelowercase.indexOf(searchText) > -1){
+            //if(alllocs[i].length>0)
+            teams.push({name:team.name,uid:team.uid})
+            if(teams.length>=10)
+                break;
+        }
+    }
+    var players = [];
+    for(var i =0;i<allplayers.length;i++){
+        player = allplayers[i];
+        if(player && player.namelowercase && player.namelowercase.indexOf(searchText) > -1){
+            //if(alllocs[i].length>0)
+            players.push({name:player.name,uid:i+1})
+            if(players.length>=10)
+                break;
+        }
+    }
+    res.send(JSON.stringify({
+        Tournaments:[],
         Players:players,
         Teams:teams
-    });
+    }));
 });
 
 app.get('/tournaments', function (req, res) {
     // Gets all tournaments
     soccervisConnection.getTournaments()
         .then(function (tournaments) {
-            res.json(tournaments);
+            res.send(JSON.stringify(tournaments));
         }, function (error) {
-            res.status(500).json(error);
+            res.statusCode = 500;
+            res.send(JSON.stringify(error));
         });
 });
 
 app.get('/tournament', function (req, res) {
     var name = req.query.name;
-    res.json({
+    res.send(JSON.stringify({
         name: name,
         date:"2015",
         teams:[
             {name:'team1',uid:'team1'},
-            {name:'team2',uid:'team2'}
+            {name:'team2',uid:'team2'},
         ]
-    });
+    }));
 });
 
-app.get('/team', function (req, res) {
-    var name = req.query.name;
-    var barce = {name:'Barce',uid:'Barce',pos:[2.173403, 41.385064]};
-    var man = {name:'Manchester',uid:'man',pos:[-2.242631, 53.480759]};
-    var ibk = {name:'Innsbruck',uid:'ibk',pos:[11.404102, 47.269212]};
-    var rapid = {name:'Wien',uid:'vie',pos:[16.373819, 48.208174]};
-    res.json({
-        name: name,
-        trainer: 'Best trainer',
-        yearformed: 2015,
-        website:'google.at',
-        players:[
-            {name:'player1',uid:'player1'},
-            {name:'player2',uid:'player2'},
-            {name:'player2',uid:'player2'},
-            {name:'player7',uid:'player2'},
-            {name:'player2',uid:'player2'},
-            {name:'player3',uid:'player2'},
-            {name:'player2',uid:'player2'},
-            {name:'player6',uid:'player2'}
-        ],
-        transfers:[
-            {
-                from: barce,
-                to: man,
-                strength: 5
-            },
-            {
-                from: man,
-                to: ibk,
-                strength: 5
-            },
-            {
-                from: ibk,
-                to: rapid,
-                strength: 5
-            }
-        ]
-    });
-});
+function getTransferDetails(teamid){
+    teamid = parseInt(teamid)-1
+    var team = allteams[teamid];
+    pos = alllocs[teamid];
+    if(pos.length!=2)
+        return null;
+    return {
+        name:team.name,
+        uid:team.uid,
+        pos:alllocs[teamid]
+    };
+}
 
 app.get('/team/:team', function (req, res) {
-    // Get a single team
-    soccervisConnection.getTeam(req.params.team)
-        .then(function (team) {
-            if (team == null) {
-                res.status(404).json(null);
-            } else {
-                res.json(team);
+    var teamid = parseInt(req.url.substring('/team/'.length))-1;
+    if(teamid>=0 && teamid<alllocs.length){
+        var team = allteams[teamid];
+        var players = [];
+        if(team.players)
+            players = team.players;
+        var transfers =[];
+        var t = allteamtransfers[teamid];
+        var loc = alllocs[teamid];
+        if(t){
+            var teamdetails = {name:team.name,uid:team.uid,pos:loc};
+            var sold = Object.keys(t.sold);
+            for(var i=0;i<sold.length;i++){
+                var to = getTransferDetails(sold[i]);
+                if(to)
+                    transfers.push({
+                        from:teamdetails,
+                        to:to,
+                        strength:t.sold[sold[i]]
+                    });
             }
-        });
-});
-
-app.get('/team/:team/transfers', function (req, res) {
-    res.send('Get all transfers from and to a team');
-});
-
-app.get('/team/:team/transfers/from', function (req, res) {
-    res.send('Get all transfers where people left the team');
-});
-
-app.get('/team/:team/transfers/to', function (req, res) {
-    res.send('Get all transfers where people joined the team');
-});
-
-app.get('/player', function (req, res) {
-    var name = req.query.name;
-    var barce = {name:'Barce',uid:'Barce',pos:[-15.132555052631583,11.908241315789475]};
-    var man = {name:'Manchester',uid:'man',pos:[11.88548080645161,-0.5387664516129034]};
-    var ibk = {name:'Innsbruck',uid:'ibk',pos:[159.8473874324324,-8.792477783783786]};
-    res.json([{
-        name: name,
-        team: 'ASdasd',
-        age: 12,
-        nationality: 'Austria',
-        transfers: [
-            {
-                from: barce,
-                to: man,
-                strength: 5
-            },
-            {
-                from: man,
-                to: ibk,
-                strength: 5
+            var bought = Object.keys(t.bought);
+            for(var i=0;i<bought.length;i++){
+                var from = getTransferDetails(bought[i]);
+                if(from)
+                    transfers.push({
+                        from:from,
+                        to:teamdetails,
+                        isIngoing:true,
+                        strength:t.bought[bought[i]]
+                    });
             }
-        ]
-    }]);
+        }
+        var result = {name:team.name,details:team.details,players:players,transfers:transfers,pos:loc};
+        res.send(JSON.stringify(result));
+    }
 });
 
 app.get('/player/:player', function (req, res) {
-    // Get a single player
-    soccervisConnection.getPlayer(req.params.player)
-        .then(function (player) {
-            if (player == null) {
-                res.status(404).send(null);
-            } else {
-                res.json(player);
+    var playerid = parseInt(req.url.substring('/player/'.length))-1;
+    if(playerid>=0 && playerid<allplayers.length){
+        var player = allplayers[playerid];
+        var transfers = [];
+        var team = null;
+        if(player.teams.length>0){
+            var teamid = player.teams[0].uid;
+            var currentteam = allteams[teamid-1];
+            var loc = alllocs[teamid-1];
+            team = {name:currentteam.name,uid:currentteam.uid,loc:loc};
+        }
+        var lastteam = null;
+        for(var i = player.teams.length-1;i>=0;i--){
+            if(i>=1){
+                var from = player.teams[i].uid;
+                var to = player.teams[i-1].uid;
+                var fromd = getTransferDetails(from.toString());
+                var tod = getTransferDetails(to.toString());
+                if(fromd==null)
+                    fromd = lastteam;
+                else
+                    lastteam = fromd;
+                if(fromd!=null && tod!=null)
+                    transfers.push({
+                        from: fromd,
+                        to: tod,
+                        strength: 5
+                    });
             }
-        });
+        }
+
+        var result = {name:player.name,details:player.details,transfers:transfers,team:team};
+        res.send(JSON.stringify(result));
+    }else{
+        res.send('{}');
+    }
 });
 
-app.get('/player/:player/transfers', function (req, res) {
-    res.send('Get all transfers of a player');
+function parselinebyline(entry,arr,name,defaultitem,preprocess){
+    stream = byline.createStream(entry,{keepEmptyLines:true})
+    stream.on('data', function(line){
+        line = line.toString('utf8');
+        if(line.length>0){
+            var obj = JSON.parse(line);
+            if(preprocess)
+                preprocess(obj);
+            arr.push(obj);
+        }else{
+            arr.push(defaultitem);
+        }
+    });
+    stream.on('end',function(line){
+        /* POSSIBLE BUG, LAST PLAYER ITEMS EMPTY*/
+        arr.pop()
+        console.log('parsed ' + arr.length + ' from ' + name + ' !');
+    });
+}
+
+var allplayers = []
+var allteamtransfers = []
+var alllocs = []
+var allteams = []
+fs.createReadStream('data/data.zip').pipe(unzip.Parse()).on('entry',function(entry){
+    var arr = null;
+    var preprocess = null;
+    var defaul = null;
+    if(entry.path=='players.dat'){
+        arr = allplayers;
+        preprocess = function(player){
+            player.namelowercase = player.name.toLowerCase();
+        }
+    }else if(entry.path=='teamtransfers.dat'){
+        arr = allteamtransfers
+    }else if(entry.path=='locs.dat'){
+        arr = alllocs
+        defaul = []
+        preprocess = function(loc){
+            if(loc.length==2){
+                tmp = loc[0];
+                loc[0] = loc[1];
+                loc[1] = tmp;
+            }
+        }
+    }else if(entry.path=='teams.dat'){
+        arr = allteams
+        defaul = {}
+        preprocess = function(team){
+            team.namelowercase = team.name.toLowerCase();
+            team.uid = allteams.length+1;
+        }
+    }
+    if(arr!=null)
+        parselinebyline(entry,arr,entry.path,defaul,preprocess)
+    entry.autodrain();
 });
+

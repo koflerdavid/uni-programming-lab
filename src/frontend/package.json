@@ -12,11 +12,13 @@
         "bluebird": "2.9.*",
         "bower": "1.4.*",
         "express": "4.*",
-        "neo4j-simple": "0.7.*",
-        "react-tools": "^0.13.2"
+        "react-tools": "^0.13.2",
+        "byline": "^4.2.1",
+        "fs": "^0.0.2",
+        "unzip": "^0.1.11"
     },
     "scripts": {
-        "start": "node_modules/react-tools/bin/jsx --extension jsx --watch jsx js & node server.js",
+        "start": "node_modules/react-tools/bin/jsx --extension jsx --watch jsx js & node index.js",
         "postinstall": "node_modules/bower/bin/bower install"
     },
     "license": "MIT"
