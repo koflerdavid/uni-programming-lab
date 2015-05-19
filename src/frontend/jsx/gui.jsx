@@ -1,13 +1,26 @@
 var IntelliSearch = React.createClass({
+    newtimeout: function(fun){
+        if(this.timeout != null) {
+            clearTimeout(this.timeout);
+        }
+
+        this.timeout = setTimeout(fun,1000);
+    },
     onSelect: function(e){
-        this.onTextChange('');
+        this.setState(this.getInitialState());
         this.props.onSelect(e);
     },
 
     render: function(){
+        var style = {
+            pointerEvents:'auto',
+            minHeight:this.state.showLoading?'9rem':'4rem'
+        };
+
         return (
-            <div>
+            <div style={style}>
                 <SearchBar onTextChange={this.onTextChange} startText={this.state.startText}/>
+                <LoadingBar showLoading={this.state.showLoading}/>
                 <SearchResult result={this.state.result} onSelect={this.onSelect} visible={this.state.startText!=''}/>
             </div>
         );
@@ -15,16 +28,30 @@ var IntelliSearch = React.createClass({
 
     onTextChange: function(text){
         var self = this;
-        if(text==''){
-            if(self.isMounted())
-                self.setState(self.getInitialState());
+
+        if(!self.isMounted()) {
             return;
         }
 
-        $.getJSON('/search?text='+text, function(result){
-            if(self.isMounted()){
-                self.setState({result:result,startText:text});
+        if(text == '') {
+            if(self.timeout != null) {
+                clearTimeout(self.timeout);
             }
+
+            self.setState({startText:'',showLoading:false});
+            return;
+        }
+
+        var state = self.getInitialState();
+        state.showLoading = true;
+        self.setState(state);
+        this.newtimeout(function(){
+            $.getJSON('/search?text='+text, function(result){
+                self.setState({showLoading:false});
+                if(self.isMounted()){
+                    self.setState({result:result,startText:text});
+                }
+            });
         });
     },
 
@@ -35,8 +62,17 @@ var IntelliSearch = React.createClass({
                 Players:[],
                 Teams:[]
             },
-            startText:''
+            startText:'',
+            showLoading:false
         };
+    }
+});
+
+var LoadingBar = React.createClass({
+    render: function(){
+        if(this.props.showLoading)
+            return (<div><img src="img/ajax-loader.gif" className="loading"/></div>);
+        return <div/>
     }
 });
 
@@ -46,7 +82,7 @@ var SearchBar = React.createClass({
     },
 
     render: function(){
-        return (<input type='text' value={this.props.startText} placeholder='Search...' ref='searchText' onChange={this.handleChange} className='form-control'/>);
+        return (<input type='text' placeholder='Search...' ref='searchText' onChange={this.handleChange} className='form-control'/>);
     }
 });
 
@@ -62,12 +98,12 @@ var SearchResult = React.createClass({
         Object.keys(this.props.result).forEach(function(category){
             var results = this[category];
             if(results && results.length > 0){
-                rows.push(<ResultCategory category={category} key={category} />);
+                rows.push(<ResultCategory category={category} key={category+"cat"} />);
                 results.forEach(function(entry){
                     entry.type = category;
-                    rows.push(<Result entry={entry} onSelect={self.props.onSelect} key={entry.slug}/>);
+                    rows.push(<Result entry={entry} onSelect={self.props.onSelect} key={entry.uid+category}/>);
                 });
-                rows.push(<Divider />);
+                rows.push(<Divider key={category+"div"}/>);
             }
         }, this.props.result);
 
@@ -121,11 +157,11 @@ var Result = React.createClass({
 var DetailRow = React.createClass({
     render: function(){
         return (
-        <li className='list-group-item'>
-            {this.props.name}
-            <h4 className='list-group-item-heading'>{this.props.data}</h4>
-        </li>
-        )
+            <li className='list-group-item'>
+                {this.props.name}
+                <h4 className='list-group-item-heading'>{this.props.data}</h4>
+            </li>
+        );
     }
 });
 
@@ -152,7 +188,7 @@ var RowList = React.createClass({
 
         this.props.entities.forEach(function(entity){
             entity.type=self.props.type;
-            rows.push(<SelectableRow entity={entity} name={entity.name} onSelected={self.props.onSelected}/>);
+            rows.push(<SelectableRow entity={entity} name={entity.name} onSelected={self.props.onSelected} key={entity.uid}/>);
         });
 
         return (
@@ -175,7 +211,7 @@ var DetailView = React.createClass({
 
     addRow:function(rows,name,data){
         if(data && data.length>0) {
-            rows.push(<DetailRow name={name} data={data}/>);
+            rows.push(<DetailRow name={name} data={data} key={name}/>);
         }
     },
 
@@ -184,6 +220,7 @@ var DetailView = React.createClass({
     },
 
     render: function(){
+        var self = this;
         var selected = this.props.selected;
         if(!selected || this.props.hidden) {
             return null;
@@ -194,9 +231,10 @@ var DetailView = React.createClass({
         switch(selected.type){
             case 'Players':
                 this.addRow(rows,'Name',selected.name);
-                this.addRow(rows,'Age',selected.age.toString());
-                this.addRow(rows,'Nationality',selected.nationality);
-                this.addRow(rows,'Team',selected.team);
+                if(selected.details)
+                    Object.keys(selected.details).forEach(function(detailkey){
+                        self.addRow(rows,detailkey,selected.details[detailkey]);
+                    });
                 var teams = [];
                 var transfers = selected.transfers;
                 if(transfers&&transfers.length>0){
@@ -204,15 +242,22 @@ var DetailView = React.createClass({
                     transfers.forEach(function(transfer){
                         teams.push(transfer.to);
                     });
-                    rows.push(<RowList entities={teams} type="Teams" onSelected={this.props.onSelected}/>);
+                    rows.push(<RowList entities={teams} type="Teams" onSelected={this.props.onSelected} key={'teams'}/>);
                 }
                 break;
+
             case 'Teams':
                 this.addRow(rows,'Name',selected.name);
-                this.addRow(rows,'Year Formed',selected.yearFormed.toString());
+
+                if(selected.details)
+                    Object.keys(selected.details).forEach(function(detailkey){
+                        self.addRow(rows,detailkey,selected.details[detailkey]);
+                    });
+
                 if(selected.players&&selected.players.length>0)
-                    rows.push(<RowList entities={selected.players} type="Players" onSelected={this.props.onSelected}/>);
+                    rows.push(<RowList entities={selected.players} type="Players" onSelected={this.props.onSelected} key={'players'}/>);
                 break;
+
             case 'Tournaments':
                 this.addRow(rows,'Name',selected.name);
                 this.addRow(rows,'Date',selected.date);
@@ -221,8 +266,13 @@ var DetailView = React.createClass({
                 break;
         }
 
+        var style = {
+            overflow:'auto',
+            pointerEvents:'auto'
+        };
+
         return (
-            <div className={"panel panel-"+this.staticLABELS[selected.type]+" panel-transparent"}>
+            <div className={"panel panel-"+this.staticLABELS[selected.type]+" panel-transparent"} style={style}>
                 <div className="panel-heading">
                     <button type="button" className="btn btn-default btn-sm pull-right" onClick={this.handleExit}>
                         <span className="glyphicon glyphicon-remove" aria-hidden="true"></span>
@@ -249,19 +299,28 @@ var App = React.createClass({
     },
 
     render: function(){
-        var style ={
+        var style = {
             position:'absolute',
             right:'0px',
-            margin:'20px',
             width:'20%',
-            zIndex:1
+            zIndex:1001,
+            display:'flex',
+            flexDirection:'column',
+            height:'100%',
+            paddingTop:'2rem',
+            paddingRight:'2rem',
+            pointerEvents:'none'
+        };
+
+        var style2 = {
+            flex:'1'
         };
 
         return (
             <div style={style}>
                 <IntelliSearch onSelect={this.onSelect} />
-                <br/>
                 <DetailView selected={this.state.selected} onSelected={this.onSelect} />
+                <div style={style2}></div>
             </div>
         );
     },
@@ -269,23 +328,31 @@ var App = React.createClass({
     onSelect: function(e){
         var self = this;
         if(!e){
-            if(self.isMounted())
+            if(self.isMounted()) {
                 self.setState(this.getInitialState());
-            window.globe.updateTransfers([]);
-            return
+            }
+
+            window.globe.updateTransfers(null,[]);
+            return;
         }
 
-        $.getJSON("/"+this.staticURL[e.type]+'/'+e.slug, function(result) {
+        $.getJSON("/"+this.staticURL[e.type]+'/'+e.uid, function(result){
             result.type = e.type;
             if(self.isMounted()){
                 var transfers = [];
+                var overlays = [];
+                console.log(result);
 
                 switch(e.type){
                     case 'Tournaments':
                         break;
 
                     case 'Teams':
-                        transfers=result.transfers;
+                        if(result.pos.length == 2) {
+                            overlays.push({name: result.name, uid: e.uid, pos: result.pos});
+                        }
+
+                        transfers = result.transfers ? result.transfers: [];
                         transfers.forEach(function (transfer) {
                             if (!transfer.hasOwnProperty('from')) {
                                 transfer.from = e;
@@ -300,11 +367,15 @@ var App = React.createClass({
                         break;
 
                     case 'Players':
-                        transfers=result.transfers;
+                        if(result.team) {
+                            overlays.push({name: result.team.name, uid: result.team.uid, pos: result.team.loc});
+                        }
+
+                        transfers=result.transfers?result.transfers:[];
                         break;
                 }
 
-                window.globe.updateTransfers(transfers);
+                window.globe.updateTransfers(overlays, transfers);
                 self.setState({selected:result});
             }
         });

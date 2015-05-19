@@ -21,7 +21,7 @@ public class Neo4jInserter {
     public Node createPlayer(Player player) {
         HashMap<String, Object> parameters = new HashMap<>(9);
         parameters.put("name", player.getName());
-        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(player.getName(), player.getNationality())));
+        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(player.getName(), player.getNationality(), player.getBirthday())));
         parameters.put("age", player.getAge());
         parameters.put("uri", player.getUri());
         parameters.put("birthday", player.getBirthday());
@@ -194,7 +194,7 @@ public class Neo4jInserter {
 
         graphDb.execute("MATCH (team:Team) RETURN team.uri AS uri").forEachRemaining(row -> {
             Team team = new Team((String) row.get("uri"), (String) row.get("name"));
-            teamCrawler.crawlTeamPage(team);
+            teamCrawler.crawlTeamPage(team.getUri(), team);
         });
     }
 
@@ -220,7 +220,7 @@ public class Neo4jInserter {
         TournamentCrawler tournamentCrawler = getTournamentCrawler(teamCrawler);
 
         try {
-            tournamentCrawler.crawlTournamentPage(tournament);
+            tournamentCrawler.crawlTournamentPage(tournament.getUri(), tournament);
             return tournament;
 
         } catch (IOException e) {
@@ -239,7 +239,7 @@ public class Neo4jInserter {
                             "RETURN team.uri as teamUri")
                     .columnAs("teamUri");
 
-            incompleteTeams.forEachRemaining(teamUri -> teamCrawler.crawlTeamPage(new Team(teamUri, "")));
+            incompleteTeams.forEachRemaining(teamCrawler::crawlTeamPage);
 
             tx.success();
         }
@@ -254,13 +254,19 @@ public class Neo4jInserter {
         Neo4jInserter inserter = new Neo4jInserter(graphDb);
 
         try {
-            if ("tournament".equals(command)) {
-                inserter.crawlTournament(new Tournament(args[2], args[3]));
-            } else if ("all".equals(command)) {
-                String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
-                inserter.crawlWebsite(rootUri);
-            } else if ("fixTeams".equals(command)) {
-                inserter.completeTeamInformation();
+            switch (command) {
+                case "tournament":
+                    inserter.crawlTournament(new Tournament(args[2], args.length > 3 ? args[3] : ""));
+                    break;
+
+                case "all":
+                    String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
+                    inserter.crawlWebsite(rootUri);
+                    break;
+
+                case "fixTeams":
+                    inserter.completeTeamInformation();
+                    break;
             }
 
         } catch (IOException e) {

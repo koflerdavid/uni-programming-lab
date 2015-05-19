@@ -23,7 +23,7 @@ public class TournamentCrawler {
 
         for (Tournament tournament : tournaments) {
             try {
-                crawlTournamentPage(tournament);
+                crawlTournamentPage(tournament.getUri(), tournament);
             } catch (IOException e) {
                 e.printStackTrace();
                 failed.add(tournament);
@@ -43,10 +43,18 @@ public class TournamentCrawler {
         }
     }
 
-	public boolean crawlTournamentPage(Tournament tournament) throws IOException {
-		String uri = tournament.getUri();
-		System.err.println("Crawling tournament: " + tournament.getName());
-		LinkedHashSet<Team> teams = new LinkedHashSet<Team>();
+    public Tournament crawlTournamentPage(String uri) throws IOException {
+        Tournament tournament = new Tournament(uri, "");
+        if (crawlTournamentPage(uri, tournament)) {
+            return tournament;
+        }
+
+        return null;
+    }
+
+	public boolean crawlTournamentPage(String uri, Tournament tournament) throws IOException {
+        System.err.println("Crawling tournament " + uri);
+		LinkedHashSet<Team> teams = new LinkedHashSet<>();
 
 		try {
 			Thread.sleep(Utils.HTTP_SLEEP);
@@ -57,7 +65,9 @@ public class TournamentCrawler {
 							"Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0")
 					.timeout(Utils.HTTP_TIMEOUT).get();
 
+            tournament.setUri(uri);
             tournament.setName(doc.getElementsByTag("h1").text());
+
             System.out.println("Name: " + tournament.getName());
 
 			// Get all links associated to the teams of the tournament
@@ -91,12 +101,9 @@ public class TournamentCrawler {
 	public static void main(String[] args) {
         TeamCrawler teamCrawler = new TeamCrawler();
 		TournamentCrawler tc = new TournamentCrawler();
-        tc.onTournamentCrawled((Tournament tournament) -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
-		Tournament tournament = new Tournament(
-				"http://www.soccerbase.com/tournaments/tournament.sd?comp_id=78",
-				"FA Tr");
+//        tc.onTournamentCrawled((Tournament tournament) -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
         try {
-            tc.crawlTournamentPage(tournament);
+            tc.crawlTournamentPage("http://www.soccerbase.com/tournaments/tournament.sd?comp_id=78");
         } catch (IOException e) {
             e.printStackTrace();
         }
