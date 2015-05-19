@@ -255,7 +255,7 @@ var App = React.createClass({
             position:'absolute',
             right:'0px',
             width:'20%',
-            zIndex:1,
+            zIndex:1001,
             display:'flex',
             flexDirection:'column',
             height:'100%',
