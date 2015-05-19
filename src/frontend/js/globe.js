@@ -12,8 +12,9 @@ var Globe = (function(){
 
     return function(glDom, overlayDom){
         init(glDom,overlayDom);
-        this.updateTransfers = function(transfers){
-            glrenderer.updateTransfers(transfers,handleUpdate);
+        this.updateTransfers = function(overlays,transfers){
+            overlayrenderer.reset();
+            glrenderer.updateTransfers(overlays,transfers,handleUpdate);
         }
         this.setOnSelect = function(onSelect){
             overlayrenderer.setOnSelect(onSelect);
