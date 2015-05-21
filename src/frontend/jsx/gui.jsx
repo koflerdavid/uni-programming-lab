@@ -46,7 +46,7 @@ var IntelliSearch = React.createClass({
         state.showLoading = true;
         self.setState(state);
         this.newtimeout(function(){
-            $.getJSON('/search?text='+text, function(result){
+            $.getJSON('/search', {text: text}, function(result){
                 self.setState({showLoading:false});
                 if(self.isMounted()){
                     self.setState({result:result,startText:text});
@@ -187,7 +187,7 @@ var RowList = React.createClass({
         var rows = [];
 
         this.props.entities.forEach(function(entity){
-            entity.type=self.props.type;
+            entity.type = self.props.type;
             rows.push(<SelectableRow entity={entity} name={entity.name} onSelected={self.props.onSelected} key={entity.uid}/>);
         });
 
@@ -371,7 +371,7 @@ var App = React.createClass({
                             overlays.push({name: result.team.name, uid: result.team.uid, pos: result.team.loc});
                         }
 
-                        transfers=result.transfers?result.transfers:[];
+                        transfers = result.transfers ? result.transfers: [];
                         break;
                 }
 
