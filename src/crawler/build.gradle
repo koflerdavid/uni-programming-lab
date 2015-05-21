@@ -14,6 +14,8 @@ dependencies {
     // HTML Parser
     compile 'org.jsoup:jsoup:1.8.1'
     compile "org.neo4j:neo4j:${neo4jVersion}"
+    compile 'javax.json:javax.json-api:1.0'
+    runtime 'org.glassfish:javax.json:1.0.4'
 
     testCompile "junit:junit:4.11"
 }

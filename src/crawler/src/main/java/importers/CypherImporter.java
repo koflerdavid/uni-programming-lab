@@ -1,5 +1,6 @@
-package crawler;
+package importers;
 
+import crawler.Neo4jHelper;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.graphdb.Transaction;

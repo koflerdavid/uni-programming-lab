@@ -1,7 +1,11 @@
 package crawler;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class Utils {
 	public static int HTTP_SLEEP = 4000;
@@ -18,6 +22,23 @@ public class Utils {
 		else
 			return s;
 	}
+
+    public static void forEachLineAsJson(InputStream inputStream, Consumer<JsonObject> action) throws UnsupportedEncodingException {
+        BufferedReader teamFileReader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
+        teamFileReader.lines().forEachOrdered(line -> {
+            String trimmedLine = line.trim();
+            if (trimmedLine.length() == 0) {
+                return;
+            }
+
+            JsonObject jTeam = Json.createReader(new StringReader(trimmedLine)).readObject();
+            action.accept(jTeam);
+        });
+    }
+
+    public static String trim(String s) {
+        return s != null ? s.trim() : null;
+    }
 
     public class Range<DataT, RangeV extends Comparable<RangeV>>
     {

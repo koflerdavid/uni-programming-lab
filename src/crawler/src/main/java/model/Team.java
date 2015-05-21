@@ -167,4 +167,21 @@ public class Team {
 		return true;
 	}
 
+    @Override
+    public String toString() {
+        return "Team{" +
+                "uri='" + uri + '\'' +
+                ", name='" + name + '\'' +
+                ", nickname='" + nickname + '\'' +
+                ", ground='" + ground + '\'' +
+                ", trainer=" + trainer +
+                ", yearFormed=" + yearFormed +
+                ", chairman='" + chairman + '\'' +
+                ", address1='" + address1 + '\'' +
+                ", address2='" + address2 + '\'' +
+                ", address3='" + address3 + '\'' +
+                ", postCode='" + postCode + '\'' +
+                ", website='" + website + '\'' +
+                '}';
+    }
 }

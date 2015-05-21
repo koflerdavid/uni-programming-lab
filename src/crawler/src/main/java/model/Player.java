@@ -166,4 +166,22 @@ public class Player {
 		return true;
 	}
 
+    @Override
+    public String toString() {
+        return "Player{" +
+                "uri='" + uri + '\'' +
+                ", name='" + name + '\'' +
+                ", team=" + team +
+                ", number=" + number +
+                ", position='" + position + '\'' +
+                ", age=" + age +
+                ", height='" + height + '\'' +
+                ", weight='" + weight + '\'' +
+                ", birthplace='" + birthplace + '\'' +
+                ", birthday='" + birthday + '\'' +
+                ", nationality='" + nationality + '\'' +
+                ", dateSigned='" + dateSigned + '\'' +
+                ", fee='" + fee + '\'' +
+                '}';
+    }
 }
