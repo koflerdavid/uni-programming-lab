@@ -1,6 +1,7 @@
 package model;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 public class Team {
 	private String uri;
@@ -14,10 +15,13 @@ public class Team {
 	private String address2;
 	private String address3;
 	private String postCode;
-	private HashSet<Player> players;
 	private String website;
 
+    private double longitude;
+    private double latitude;
+
     private HashSet<Tournament> tournaments = new HashSet<>();
+    private HashSet<Player> players = new LinkedHashSet<>();
 
 	public Team(String uri, String name) {
 		this.uri = uri;
@@ -134,6 +138,22 @@ public class Team {
 
     public void setTournaments(HashSet<Tournament> tournaments) {
         this.tournaments = tournaments;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
     }
 
     @Override
