@@ -16,14 +16,11 @@ import org.slf4j.LoggerFactory;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.zip.ZipFile;
 
 public class ZipImporter {
     private final static Logger LOGGER = LoggerFactory.getLogger(ZipImporter.class);
@@ -49,15 +46,15 @@ public class ZipImporter {
     }
 
     public void importData(String zipFile) throws IOException {
-        final DataFile dataFile = openZipFile(zipFile);
+        final ZipImporterDataFile zipImporterDataFile = new ZipImporterDataFile(zipFile);
 
         final Neo4jInserter inserter = new Neo4jInserter(graphDb);
 
-        final Map<Integer, PlayerWithRawContracts> playersWithRawContracts = importPlayers(dataFile);
-        final Map<Integer, Team> teams = importTeams(dataFile, playersWithRawContracts);
+        final Map<Integer, PlayerWithRawContracts> playersWithRawContracts = importPlayers(zipImporterDataFile);
+        final Map<Integer, Team> teams = importTeams(zipImporterDataFile, playersWithRawContracts);
 
         assignContracts(playersWithRawContracts, teams);
-        importLocations(dataFile, teams);
+        importLocations(zipImporterDataFile, teams);
 
 //        detectDoublePlayers(playersWithRawContracts);
 
@@ -130,8 +127,8 @@ public class ZipImporter {
         });
     }
 
-    private void importLocations(final DataFile dataFile, final Map<Integer, Team> teams) throws UnsupportedEncodingException {
-        Utils.forEachLineAsJson(dataFile.getLocationsInputStream(), (lineNumber, value) -> {
+    private void importLocations(final ZipImporterDataFile zipImporterDataFile, final Map<Integer, Team> teams) throws UnsupportedEncodingException {
+        Utils.forEachLineAsJson(zipImporterDataFile.getLocationsInputStream(), (lineNumber, value) -> {
             assert value.getValueType() == JsonValue.ValueType.ARRAY;
             final JsonArray jCoordinates = (JsonArray) value;
 
@@ -141,11 +138,11 @@ public class ZipImporter {
         });
     }
 
-    private Map<Integer, PlayerWithRawContracts> importPlayers(final DataFile dataFile) throws UnsupportedEncodingException, QueryExecutionException {
+    private Map<Integer, PlayerWithRawContracts> importPlayers(final ZipImporterDataFile zipImporterDataFile) throws UnsupportedEncodingException, QueryExecutionException {
         final Map<Integer, PlayerWithRawContracts> playersWithRawContracts = new HashMap<>();
 
         try (final Transaction tx = graphDb.beginTx()) {
-            Utils.forEachLineAsJson(dataFile.getPlayersInputStream(), jsonValue -> {
+            Utils.forEachLineAsJson(zipImporterDataFile.getPlayersInputStream(), jsonValue -> {
                 assert jsonValue.getValueType() == JsonValue.ValueType.OBJECT;
                 final JsonObject jPlayer = (JsonObject) jsonValue;
 
@@ -163,11 +160,11 @@ public class ZipImporter {
         return playersWithRawContracts;
     }
 
-    private Map<Integer, Team> importTeams(final DataFile dataFile, final Map<Integer, PlayerWithRawContracts> players) throws UnsupportedEncodingException, QueryExecutionException {
+    private Map<Integer, Team> importTeams(final ZipImporterDataFile zipImporterDataFile, final Map<Integer, PlayerWithRawContracts> players) throws UnsupportedEncodingException, QueryExecutionException {
         Map<Integer, Team> teams = new HashMap<>();
 
         try (final Transaction tx = graphDb.beginTx()) {
-            Utils.forEachLineAsJson(dataFile.getTeamsInputStream(), jsonValue -> {
+            Utils.forEachLineAsJson(zipImporterDataFile.getTeamsInputStream(), jsonValue -> {
                 assert jsonValue.getValueType() == JsonValue.ValueType.OBJECT;
                 final JsonObject jTeam = (JsonObject) jsonValue;
 
@@ -192,68 +189,6 @@ public class ZipImporter {
         }
 
         return teams;
-    }
-
-    protected DataFile openZipFile(final String filename) throws IOException {
-        final ZipFile zipFile = new ZipFile(new File(filename), ZipFile.OPEN_READ);
-
-        DataFile dataFile = new DataFile();
-        dataFile.setZipFile(zipFile);
-
-        dataFile.setLocationsInputStream(zipFile.getInputStream(zipFile.getEntry("locs.dat")));
-        dataFile.setPlayersInputStream(zipFile.getInputStream(zipFile.getEntry("players.dat")));
-        dataFile.setTeamsInputStream(zipFile.getInputStream(zipFile.getEntry("teams.dat")));
-        dataFile.setTransfersInputStream(zipFile.getInputStream(zipFile.getEntry("teamtransfers.dat")));
-
-        return dataFile;
-    }
-
-    private static class DataFile {
-        private InputStream teamsInputStream;
-        private InputStream playersInputStream;
-        private InputStream transfersInputStream;
-        private InputStream locationsInputStream;
-        private ZipFile zipFile;
-
-        public InputStream getTeamsInputStream() {
-            return teamsInputStream;
-        }
-
-        public void setTeamsInputStream(InputStream teamsInputStream) {
-            this.teamsInputStream = teamsInputStream;
-        }
-
-        public InputStream getPlayersInputStream() {
-            return playersInputStream;
-        }
-
-        public void setPlayersInputStream(InputStream playersInputStream) {
-            this.playersInputStream = playersInputStream;
-        }
-
-        public InputStream getTransfersInputStream() {
-            return transfersInputStream;
-        }
-
-        public void setTransfersInputStream(InputStream transfersInputStream) {
-            this.transfersInputStream = transfersInputStream;
-        }
-
-        public InputStream getLocationsInputStream() {
-            return locationsInputStream;
-        }
-
-        public void setLocationsInputStream(InputStream locationsInputStream) {
-            this.locationsInputStream = locationsInputStream;
-        }
-
-        public ZipFile getZipFile() {
-            return zipFile;
-        }
-
-        public void setZipFile(ZipFile zipFile) {
-            this.zipFile = zipFile;
-        }
     }
 
     private static class PlayerWithRawContracts {
