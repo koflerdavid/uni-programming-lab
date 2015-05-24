@@ -6,12 +6,16 @@ import model.Team;
 import model.Tournament;
 import org.neo4j.graphdb.*;
 import org.neo4j.helpers.collection.IteratorUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Neo4jInserter {
+    private static Logger LOGGER = LoggerFactory.getLogger(Neo4jInserter.class);
+
     private GraphDatabaseService graphDb;
 
     public Neo4jInserter(GraphDatabaseService graphDb) {
@@ -29,6 +33,8 @@ public class Neo4jInserter {
         parameters.put("height", player.getHeight());
         parameters.put("weight", player.getWeight());
         parameters.put("nationality", player.getNationality());
+
+        LOGGER.debug("Create player {} (at {})", player.getName(), player.getUri());
 
         Node nPlayer = (Node) graphDb
                 .execute("MERGE (player : Player { uri: {uri} })" +
@@ -57,6 +63,8 @@ public class Neo4jInserter {
         parameters.put("ground", team.getGround());
         parameters.put("trainer", team.getTrainer() != null ? team.getTrainer().getName() : null);
 
+        LOGGER.debug("Create team {} (at: {})", team.getName(), team.getUri());
+
         Node nTeam = (Node) graphDb
                 .execute("MERGE (team : Team { uri: {uri} })" +
                         " SET team.name = {name}, team.slug = {slug}, team.nickname = {nickname}, team.website = {website}," +
@@ -76,6 +84,8 @@ public class Neo4jInserter {
         parameters.put("slug", Slugifier.generateSlug(Arrays.asList(tournament.getName(), tournament.getCountry())));
         parameters.put("uri", tournament.getUri());
         parameters.put("country", tournament.getCountry());
+
+        LOGGER.debug("Create tournament {} (at: {})", tournament.getName(), tournament.getUri());
 
         Node nTournament = (Node) graphDb
                 .execute("MERGE (tournament : Tournament { uri: {uri} })" +
@@ -157,7 +167,7 @@ public class Neo4jInserter {
             tx.success();
         }
 
-        System.out.println("Contracts: " + contracts.size());
+        LOGGER.debug("addPlayerContracts: Player {} (at {}) has {} contracts: ", player.getName(), player.getUri(), contracts.size());
         return contracts;
     }
 
