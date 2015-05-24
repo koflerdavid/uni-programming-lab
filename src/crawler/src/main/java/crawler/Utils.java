@@ -1,29 +1,31 @@
 package crawler;
 
 import javax.json.Json;
-import javax.json.JsonObject;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class Utils {
-	public static int HTTP_SLEEP = 4000;
+    public static int HTTP_SLEEP = 4000;
     public static int HTTP_TIMEOUT = 3000;
 
-	// C-style printf
-	public static void println(String msg, Object... args) {
-		System.out.printf(msg + '\n', args);
-	}
+    // C-style printf
+    public static void println(String msg, Object... args) {
+        System.out.printf(msg + '\n', args);
+    }
 
-	public static String trim(String s, int width) {
-		if (s.length() > width)
-			return s.substring(0, width - 1);
-		else
-			return s;
-	}
+    public static String trim(String s, int width) {
+        if (s.length() > width)
+            return s.substring(0, width - 1);
+        else
+            return s;
+    }
 
-    public static void forEachLineAsJson(InputStream inputStream, Consumer<JsonObject> action) throws UnsupportedEncodingException {
+    public static void forEachLineAsJson(InputStream inputStream, Consumer<JsonValue> action) throws UnsupportedEncodingException {
         BufferedReader teamFileReader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
         teamFileReader.lines().forEachOrdered(line -> {
             String trimmedLine = line.trim();
@@ -31,8 +33,26 @@ public class Utils {
                 return;
             }
 
-            JsonObject jTeam = Json.createReader(new StringReader(trimmedLine)).readObject();
-            action.accept(jTeam);
+            JsonValue jsonValue = Json.createReader(new StringReader(trimmedLine)).read();
+            action.accept(jsonValue);
+        });
+    }
+
+    public static void forEachLineAsJson(InputStream inputStream, BiConsumer<Integer, JsonValue> action) throws UnsupportedEncodingException {
+        // Little trick to pass the integer into the closure. It is initialized to `0`.
+        final int[] currentLineNumber = new int[]{0};
+
+        BufferedReader teamFileReader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
+        teamFileReader.lines().forEachOrdered(line -> {
+            ++currentLineNumber[0];
+            String trimmedLine = line.trim();
+
+            if (trimmedLine.length() == 0) {
+                return;
+            }
+
+            JsonStructure jsonValue = Json.createReader(new StringReader(trimmedLine)).read();
+            action.accept(currentLineNumber[0], jsonValue);
         });
     }
 
@@ -40,8 +60,7 @@ public class Utils {
         return s != null ? s.trim() : null;
     }
 
-    public class Range<DataT, RangeV extends Comparable<RangeV>>
-    {
+    public class Range<DataT, RangeV extends Comparable<RangeV>> {
         public final DataT data;
         public final RangeV from;
         public final RangeV to;
@@ -56,8 +75,9 @@ public class Utils {
     /**
      * Computes overlaps in an ordered iterable of ranges. The order is assumed to be the ascending lexicographic order
      * of the ranges.
-     * @param ranges A sorted iterable.
-     * @param <DataT> Data associated with the range.
+     *
+     * @param ranges   A sorted iterable.
+     * @param <DataT>  Data associated with the range.
      * @param <RangeV> The value type which defines the range.
      * @return The list of overlaps in the iterable.
      */
