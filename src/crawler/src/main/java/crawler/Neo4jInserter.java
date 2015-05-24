@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -25,7 +27,16 @@ public class Neo4jInserter {
     public Node createPlayer(Player player) {
         HashMap<String, Object> parameters = new HashMap<>(9);
         parameters.put("name", player.getName());
-        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(player.getName(), player.getNationality(), player.getBirthday())));
+
+        try {
+            final String id = new URL(player.getUri()).getQuery().split("=")[1];
+            parameters.put("slug", Slugifier.generateSlug(Arrays.asList(player.getName(), player.getNationality(), player.getBirthday(), id)));
+        } catch (MalformedURLException e) {
+            LOGGER.error("createPlayer(): Invalid URL", e);
+            e.printStackTrace();
+            return null;
+        }
+
         parameters.put("age", player.getAge());
         parameters.put("uri", player.getUri());
         parameters.put("birthday", player.getBirthday());
@@ -51,7 +62,16 @@ public class Neo4jInserter {
         HashMap<String, Object> parameters = new HashMap<>(13);
         parameters.put("uri", team.getUri());
         parameters.put("name", team.getName());
-        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(team.getName(), Integer.toString(team.getYearFormed()))));
+
+        try {
+            String id = new URL(team.getUri()).getQuery().split("=")[1];
+            parameters.put("slug", Slugifier.generateSlug(Arrays.asList(team.getName(), Integer.toString(team.getYearFormed()), id)));
+        } catch (MalformedURLException e) {
+            LOGGER.error("createTeam(): invalid URL", e);
+            e.printStackTrace();
+            return null;
+        }
+
         parameters.put("nickname", team.getNickname());
         parameters.put("website", team.getWebsite());
         parameters.put("yearFormed", team.getYearFormed());
