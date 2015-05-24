@@ -16,7 +16,7 @@ public class Player {
 	private String nationality;
 	private String dateSigned;
 	private String fee;
-	private LinkedHashSet<Contract> contracts;
+	private LinkedHashSet<Contract> contracts = new LinkedHashSet<>();
 
 	public Player(String uri, String name) {
 		this.uri = uri;
