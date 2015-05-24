@@ -3,41 +3,51 @@ package model;
 import java.util.Date;
 
 public class Contract {
-	private Team team;
-	private Date from;
-	private Date to;
-	private String fee;
+    private Team team;
+    private Date from;
+    private Date to;
+    private String fee;
 
-	public Team getTeam() {
-		return team;
-	}
+    public Contract() {
+    }
 
-	public void setTeam(Team team) {
-		this.team = team;
-	}
+    public Contract(Team team, Date from, Date to, String fee) {
+        this.team = team;
+        this.from = from;
+        this.to = to;
+        this.fee = fee;
+    }
 
-	public Date getFrom() {
-		return from;
-	}
+    public Team getTeam() {
+        return team;
+    }
 
-	public void setFrom(Date from) {
-		this.from = from;
-	}
+    public void setTeam(Team team) {
+        this.team = team;
+    }
 
-	public Date getTo() {
-		return to;
-	}
+    public Date getFrom() {
+        return from;
+    }
 
-	public void setTo(Date to) {
-		this.to = to;
-	}
+    public void setFrom(Date from) {
+        this.from = from;
+    }
 
-	public String getFee() {
-		return fee;
-	}
+    public Date getTo() {
+        return to;
+    }
 
-	public void setFee(String string) {
-		this.fee = string;
-	}
+    public void setTo(Date to) {
+        this.to = to;
+    }
+
+    public String getFee() {
+        return fee;
+    }
+
+    public void setFee(String string) {
+        this.fee = string;
+    }
 
 }
