@@ -31,3 +31,10 @@ task start_neo4j(type: Exec) {
 task stop_neo4j(type: Exec) {
     commandLine neo4JExecutable, "stop"
 }
+
+task(zipImport, dependsOn: 'classes', type: JavaExec) {
+    main = 'importers.ZipImporter'
+    classpath = sourceSets.main.runtimeClasspath
+    args "/home/dkofler/opt/neo4j-community-2.2.1/data/graph.db"
+    args "../frontend/data/data.zip"
+}
