@@ -10,6 +10,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -19,8 +20,10 @@ import java.util.function.Consumer;
 public class TeamCrawler {
     private ArrayList<Consumer<Team>> onTeamCrawledListeners = new ArrayList<>();
 
-    public void crawlAllTeamPages(Collection<Team> teams) {
-        teams.forEach(team -> crawlTeamPage(team.getUri(), team));
+    public void crawlAllTeamPages(Collection<Team> teams) throws IOException {
+        for (Team team : teams) {
+            crawlTeamPage(team.getUri().toString(), team);
+        }
 	}
 
     public void onTeamCrawled(Consumer<Team> listener) {
@@ -33,8 +36,8 @@ public class TeamCrawler {
         }
     }
 
-    public Team crawlTeamPage(String uri) {
-        Team team = new Team(uri, "");
+    public Team crawlTeamPage(String uri) throws IOException {
+        Team team = new Team(new URL(uri), "");
         if (crawlTeamPage(uri, team)) {
             return team;
         }
@@ -42,7 +45,7 @@ public class TeamCrawler {
         return team;
     }
 
-	public boolean crawlTeamPage(String uri, Team team) {
+	public boolean crawlTeamPage(String uri, Team team) throws IOException {
 		System.err.println("Crawling team page: " + uri);
 
 		try {
@@ -55,7 +58,7 @@ public class TeamCrawler {
 					.timeout(Utils.HTTP_TIMEOUT).get();
 
             String[] parts = doc.getElementsByTag("h1").text().split(" Club details", 2);
-            team.setUri(uri);
+            team.setUri(new URL(uri));
             team.setName(parts[0]);
 
 			// Get all the data by iterating through the club info box
@@ -175,7 +178,7 @@ public class TeamCrawler {
 			for (Element link : links) {
 				// Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),
 				// Utils.trim(link.text(), 35));
-                final Player player = new Player(link.attr("abs:href"), link.text());
+                final Player player = new Player(new URL(link.attr("abs:href")), link.text());
                 player.setTeam(team);
                 players.add(player);
 			}
@@ -201,6 +204,11 @@ public class TeamCrawler {
 
 	public static void main(String[] args) {
 		TeamCrawler tc = new TeamCrawler();
-		tc.crawlTeamPage("http://www.soccerbase.com/teams/team.sd?team_id=536");
+
+		try {
+			tc.crawlTeamPage("http://www.soccerbase.com/teams/team.sd?team_id=536");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

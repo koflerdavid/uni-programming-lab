@@ -10,6 +10,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,12 +32,14 @@ public class PlayerCrawler {
         }
     }
 
-    public void crawlAllPlayerPages(Collection<Player> players) {
-        players.forEach(player -> crawlPlayerPage(player.getUri(), player));
+    public void crawlAllPlayerPages(Collection<Player> players) throws IOException {
+        for (Player player : players) {
+            crawlPlayerPage(player.getUri().toString(), player);
+        }
     }
 
-    public Player crawlPlayerPage(String uri) {
-        Player player = new Player(uri, "");
+    public Player crawlPlayerPage(String uri) throws IOException {
+        Player player = new Player(new URL(uri), "");
 
         if (crawlPlayerPage(uri, player)) {
             return player;
@@ -45,7 +48,7 @@ public class PlayerCrawler {
         return null;
     }
 
-	public boolean crawlPlayerPage(String uri, Player player) {
+	public boolean crawlPlayerPage(String uri, Player player) throws IOException {
 		LinkedHashSet<Contract> contracts = new LinkedHashSet<>();
         SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM, YY");
 
@@ -68,7 +71,7 @@ public class PlayerCrawler {
 			// System.out.println("----------------");
 			// }
 
-            player.setUri(uri);
+            player.setUri(new URL(uri));
 
 			// get player name and number
 			Element e = it.next();
@@ -177,9 +180,10 @@ public class PlayerCrawler {
 				// get team
 				Elements links = e.select("a[href*=/teams/team.sd?team_id]");
 				for (Element link : links) {
-					contract.setTeam(new Team(link.attr("abs:href"), Utils
+					contract.setTeam(new Team(new URL(link.attr("abs:href")), Utils
 							.trim(link.text(), 35)));
 				}
+
 				System.out.println("\tTeam: " + contract.getTeam().getName());
 
 				// get date from
@@ -216,9 +220,8 @@ public class PlayerCrawler {
 
             emitPlayerCrawled(player);
 
-        } catch (IOException e) {
-            System.err.println("TournamentCrawler failed");
-            e.printStackTrace();
+            return true;
+
         } catch (InterruptedException e) {
             return false;
         } catch (ParseException e) {
@@ -226,7 +229,7 @@ public class PlayerCrawler {
             e.printStackTrace();
         }
 
-        return true;
+        return false;
     }
 
 	public static void main(String[] args) {
@@ -234,6 +237,11 @@ public class PlayerCrawler {
 		// Player p = new Player(
 		// "http://www.soccerbase.com/players/player.sd?player_id=46629",
 		// "Brad Guzan");
-		pc.crawlPlayerPage("http://www.soccerbase.com/players/player.sd?player_id=39937");
-	}
+
+        try {
+            pc.crawlPlayerPage("http://www.soccerbase.com/players/player.sd?player_id=39937");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

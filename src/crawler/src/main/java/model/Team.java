@@ -1,10 +1,11 @@
 package model;
 
+import java.net.URL;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 public class Team {
-    private String uri;
+    private URL uri;
     private String name;
     private String nickname;
     private String ground;
@@ -23,16 +24,16 @@ public class Team {
     private HashSet<Tournament> tournaments = new HashSet<>();
     private HashSet<Player> players = new LinkedHashSet<>();
 
-    public Team(String uri, String name) {
+    public Team(URL uri, String name) {
         this.uri = uri;
         this.name = name;
     }
 
-    public String getUri() {
+    public URL getUri() {
         return uri;
     }
 
-    public void setUri(String uri) {
+    public void setUri(URL uri) {
         this.uri = uri;
     }
 

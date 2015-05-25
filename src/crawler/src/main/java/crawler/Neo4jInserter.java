@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -28,14 +27,8 @@ public class Neo4jInserter {
         HashMap<String, Object> parameters = new HashMap<>(9);
         parameters.put("name", player.getName());
 
-        try {
-            final String id = new URL(player.getUri()).getQuery().split("=")[1];
-            parameters.put("slug", Slugifier.generateSlug(Arrays.asList(player.getName(), player.getNationality(), player.getBirthday(), id)));
-        } catch (MalformedURLException e) {
-            LOGGER.error("createPlayer(): Invalid URL", e);
-            e.printStackTrace();
-            return null;
-        }
+        final String id = player.getUri().getQuery().split("=")[1];
+        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(player.getName(), player.getNationality(), player.getBirthday(), id)));
 
         parameters.put("age", player.getAge());
         parameters.put("uri", player.getUri());
@@ -63,14 +56,8 @@ public class Neo4jInserter {
         parameters.put("uri", team.getUri());
         parameters.put("name", team.getName());
 
-        try {
-            String id = new URL(team.getUri()).getQuery().split("=")[1];
-            parameters.put("slug", Slugifier.generateSlug(Arrays.asList(team.getName(), Integer.toString(team.getYearFormed()), id)));
-        } catch (MalformedURLException e) {
-            LOGGER.error("createTeam(): invalid URL", e);
-            e.printStackTrace();
-            return null;
-        }
+        String id = team.getUri().getQuery().split("=")[1];
+        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(team.getName(), Integer.toString(team.getYearFormed()), id)));
 
         parameters.put("nickname", team.getNickname());
         parameters.put("website", team.getWebsite());
@@ -194,7 +181,13 @@ public class Neo4jInserter {
     private TournamentCrawler getTournamentCrawler(TeamCrawler teamCrawler) {
         TournamentCrawler tournamentCrawler = new TournamentCrawler();
         tournamentCrawler.onTournamentCrawled(this::createTournament);
-        tournamentCrawler.onTournamentCrawled(tournament -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
+        tournamentCrawler.onTournamentCrawled(tournament -> {
+            try {
+                teamCrawler.crawlAllTeamPages(tournament.getTeams());
+            } catch (IOException e) {
+                LOGGER.error("Failed to crawl a tournament's team pages");
+            }
+        });
         tournamentCrawler.onTournamentCrawled(tournament ->
                 tournament.getTeams().forEach(team -> addTeamToTournament(tournament, team)));
         return tournamentCrawler;
@@ -203,7 +196,13 @@ public class Neo4jInserter {
     private TeamCrawler getTeamCrawler(PlayerCrawler playerCrawler) {
         TeamCrawler teamCrawler = new TeamCrawler();
         teamCrawler.onTeamCrawled(this::createTeam);
-        teamCrawler.onTeamCrawled(team -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
+        teamCrawler.onTeamCrawled(team -> {
+            try {
+                playerCrawler.crawlAllPlayerPages(team.getPlayers());
+            } catch (IOException e) {
+                LOGGER.error("Failed to crawl a team's player pages", e);
+            }
+        });
         teamCrawler.onTeamCrawled(team -> team.getPlayers().forEach(player -> addPlayerToTeam(team, player)));
         return teamCrawler;
     }
@@ -219,12 +218,22 @@ public class Neo4jInserter {
         PlayerCrawler playerCrawler = new PlayerCrawler();
         TeamCrawler teamCrawler = new TeamCrawler();
 
-        teamCrawler.onTeamCrawled(team -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
+        teamCrawler.onTeamCrawled(team -> {
+            try {
+                playerCrawler.crawlAllPlayerPages(team.getPlayers());
+            } catch (IOException e) {
+                LOGGER.error("Failed to crawl a team's player pages", e);
+            }
+        });
         playerCrawler.onPlayerCrawled(this::createPlayer);
 
         graphDb.execute("MATCH (team:Team) RETURN team.uri AS uri").forEachRemaining(row -> {
-            Team team = new Team((String) row.get("uri"), (String) row.get("name"));
-            teamCrawler.crawlTeamPage(team.getUri(), team);
+            try {
+                Team team = new Team(new URL(row.get("uri").toString()), (String) row.get("name"));
+                teamCrawler.crawlTeamPage(team.getUri().toString(), team);
+            } catch (IOException e) {
+                LOGGER.error("Failed to create Team entity out of result set row", e);
+            }
         });
     }
 
@@ -250,7 +259,7 @@ public class Neo4jInserter {
         TournamentCrawler tournamentCrawler = getTournamentCrawler(teamCrawler);
 
         try {
-            tournamentCrawler.crawlTournamentPage(tournament.getUri(), tournament);
+            tournamentCrawler.crawlTournamentPage(tournament.getUri().toString(), tournament);
             return tournament;
 
         } catch (IOException e) {
@@ -269,7 +278,13 @@ public class Neo4jInserter {
                             "RETURN team.uri as teamUri")
                     .columnAs("teamUri");
 
-            incompleteTeams.forEachRemaining(teamCrawler::crawlTeamPage);
+            incompleteTeams.forEachRemaining(uri -> {
+                try {
+                    teamCrawler.crawlTeamPage(uri);
+                } catch (IOException e) {
+                    LOGGER.error("Failed to crawl a team page", e);
+                }
+            });
 
             tx.success();
         }
@@ -286,7 +301,7 @@ public class Neo4jInserter {
         try {
             switch (command) {
                 case "tournament":
-                    inserter.crawlTournament(new Tournament(args[2], args.length > 3 ? args[3] : ""));
+                    inserter.crawlTournament(new Tournament(new URL(args[2]), args.length > 3 ? args[3] : ""));
                     break;
 
                 case "all":

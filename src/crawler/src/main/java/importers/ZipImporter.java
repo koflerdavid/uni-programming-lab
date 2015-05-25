@@ -18,6 +18,8 @@ import javax.json.JsonObject;
 import javax.json.JsonValue;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -146,12 +148,18 @@ public class ZipImporter {
                 assert jsonValue.getValueType() == JsonValue.ValueType.OBJECT;
                 final JsonObject jPlayer = (JsonObject) jsonValue;
 
-                final Player player = new Player("http://www.soccerbase.com/players/player.sd?player_id=" + jPlayer.getInt("id"), Utils.trim(jPlayer.getString("name", null)));
-                player.setAge(Integer.parseInt(jPlayer.getJsonObject("details").getString("Age", "0").trim()));
-                player.setNationality(Utils.trim(jPlayer.getJsonObject("details").getString("Nationality", null)));
-                player.setDateSigned(Utils.trim(jPlayer.getJsonObject("details").getString("Date Signed", null)));
+                try {
+                    final URL url = new URL("http://www.soccerbase.com/players/player.sd?player_id=" + jPlayer.getInt("id"));
+                    final Player player = new Player(url, Utils.trim(jPlayer.getString("name", null)));
+                    player.setAge(Integer.parseInt(jPlayer.getJsonObject("details").getString("Age", "0").trim()));
+                    player.setNationality(Utils.trim(jPlayer.getJsonObject("details").getString("Nationality", null)));
+                    player.setDateSigned(Utils.trim(jPlayer.getJsonObject("details").getString("Date Signed", null)));
 
-                playersWithRawContracts.put(jPlayer.getInt("id"), new PlayerWithRawContracts(player, jPlayer.getJsonArray("teams")));
+                    playersWithRawContracts.put(jPlayer.getInt("id"), new PlayerWithRawContracts(player, jPlayer.getJsonArray("teams")));
+                } catch (MalformedURLException e) {
+                    // Should not happen
+                    assert false;
+                }
             });
 
             tx.success();
@@ -168,21 +176,27 @@ public class ZipImporter {
                 assert jsonValue.getValueType() == JsonValue.ValueType.OBJECT;
                 final JsonObject jTeam = (JsonObject) jsonValue;
 
-                final Team team = new Team("http://www.soccerbase.com/teams/team.sd?team_id=" + jTeam.getInt("id"), jTeam.getString("name").trim());
+                try {
+                    final URL url = new URL("http://www.soccerbase.com/teams/team.sd?team_id=" + jTeam.getInt("id"));
+                    final Team team = new Team(url, jTeam.getString("name").trim());
 
-                team.setAddress1(Utils.trim(jTeam.getJsonObject("details").getString("Address", null)));
-                team.setChairman(Utils.trim(jTeam.getJsonObject("details").getString("Chairman", null)));
-                team.setGround(Utils.trim(jTeam.getJsonObject("details").getString("Ground", null)));
-                team.setYearFormed(jTeam.getJsonObject("details").getInt("Year Formed", 0));
-                team.setNickname(Utils.trim(jTeam.getJsonObject("details").getString("Also known as", null)));
+                    team.setAddress1(Utils.trim(jTeam.getJsonObject("details").getString("Address", null)));
+                    team.setChairman(Utils.trim(jTeam.getJsonObject("details").getString("Chairman", null)));
+                    team.setGround(Utils.trim(jTeam.getJsonObject("details").getString("Ground", null)));
+                    team.setYearFormed(jTeam.getJsonObject("details").getInt("Year Formed", 0));
+                    team.setNickname(Utils.trim(jTeam.getJsonObject("details").getString("Also known as", null)));
 
-                for (JsonObject jPlayerReference : jTeam.getJsonArray("players").getValuesAs(JsonObject.class)) {
-                    final int playerId = jPlayerReference.getInt("uid");
-                    final Player player = players.get(playerId).getPlayer();
-                    team.getPlayers().add(player);
+                    for (JsonObject jPlayerReference : jTeam.getJsonArray("players").getValuesAs(JsonObject.class)) {
+                        final int playerId = jPlayerReference.getInt("uid");
+                        final Player player = players.get(playerId).getPlayer();
+                        team.getPlayers().add(player);
+                    }
+
+                    teams.put(jTeam.getInt("id"), team);
+                } catch (MalformedURLException e) {
+                    // Should not happen
+                    assert false;
                 }
-
-                teams.put(jTeam.getInt("id"), team);
             });
 
             tx.success();

@@ -1,6 +1,7 @@
 package crawler;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
@@ -36,7 +37,7 @@ public class MainCrawler {
 			for (Element link : links) {
 				// Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),
 				// Utils.trim(link.text(), 35));
-				tournaments.add(new Tournament(link.attr("abs:href"), link
+				tournaments.add(new Tournament(new URL(link.attr("abs:href")), link
 						.text()));
 			}
 

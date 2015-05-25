@@ -1,9 +1,10 @@
 package model;
 
+import java.net.URL;
 import java.util.LinkedHashSet;
 
 public class Player {
-    private String uri;
+    private URL uri;
     private String name;
     private Team team;
     private int number;
@@ -18,16 +19,16 @@ public class Player {
     private String fee;
     private LinkedHashSet<Contract> contracts = new LinkedHashSet<>();
 
-    public Player(String uri, String name) {
+    public Player(URL uri, String name) {
         this.uri = uri;
         this.name = name;
     }
 
-    public String getUri() {
+    public URL getUri() {
         return uri;
     }
 
-    public void setUri(String uri) {
+    public void setUri(URL uri) {
         this.uri = uri;
     }
 
