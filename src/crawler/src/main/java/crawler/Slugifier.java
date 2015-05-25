@@ -3,8 +3,10 @@ package crawler;
 import org.neo4j.graphdb.*;
 import org.neo4j.helpers.collection.IteratorUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -65,7 +67,7 @@ public class Slugifier {
         } while (true);
 
         try (Transaction tx = graphDb.beginTx()) {
-            Result result =  graphDb.execute("MATCH (node:"+labelName +")" +
+            Result result = graphDb.execute("MATCH (node:" + labelName + ")" +
                     " WITH node.slug, COUNT(node.slug) AS c, COLLECT(node) AS duplicates" +
                     " WHERE C > 1" +
                     " RETURN duplicates");
