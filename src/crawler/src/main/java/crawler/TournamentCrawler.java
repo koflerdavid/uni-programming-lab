@@ -2,13 +2,13 @@ package crawler;
 
 import model.Team;
 import model.Tournament;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -23,7 +23,7 @@ public class TournamentCrawler {
 
         for (Tournament tournament : tournaments) {
             try {
-                crawlTournamentPage(tournament.getUri(), tournament);
+                crawlTournamentPage(tournament.getUri().toString(), tournament);
             } catch (IOException e) {
                 e.printStackTrace();
                 failed.add(tournament);
@@ -44,7 +44,7 @@ public class TournamentCrawler {
     }
 
     public Tournament crawlTournamentPage(String uri) throws IOException {
-        Tournament tournament = new Tournament(uri, "");
+        Tournament tournament = new Tournament(new URL(uri), "");
         if (crawlTournamentPage(uri, tournament)) {
             return tournament;
         }
@@ -52,55 +52,55 @@ public class TournamentCrawler {
         return null;
     }
 
-	public boolean crawlTournamentPage(String uri, Tournament tournament) throws IOException {
+    public boolean crawlTournamentPage(String uri, Tournament tournament) throws IOException {
         System.err.println("Crawling tournament " + uri);
-		LinkedHashSet<Team> teams = new LinkedHashSet<>();
+        LinkedHashSet<Team> teams = new LinkedHashSet<>();
 
-		try {
-			Thread.sleep(Utils.HTTP_SLEEP);
-			// Get HTML page from URI
-			Document doc = Jsoup
-					.connect(uri)
-					.userAgent(
-							"Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0")
-					.timeout(Utils.HTTP_TIMEOUT).get();
+        try {
+            Thread.sleep(Utils.HTTP_SLEEP);
+            // Get HTML page from URI
+            Document doc = Jsoup
+                    .connect(uri)
+                    .userAgent(
+                            "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0")
+                    .timeout(Utils.HTTP_TIMEOUT).get();
 
-            tournament.setUri(uri);
+            tournament.setUri(new URL(uri));
             tournament.setName(doc.getElementsByTag("h1").text());
 
             System.out.println("Name: " + tournament.getName());
 
-			// Get all links associated to the teams of the tournament
-			Elements links = doc.select("a[href*=/teams/team.sd?team_id]");
-			System.out.println("Teams:");
-			for (Element link : links) {
-				// Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),
-				// Utils.trim(link.text(), 35));
+            // Get all links associated to the teams of the tournament
+            Elements links = doc.select("a[href*=/teams/team.sd?team_id]");
+            System.out.println("Teams:");
+            for (Element link : links) {
+                // Utils.println(" * a: <%s>  (%s)", link.attr("abs:href"),
+                // Utils.trim(link.text(), 35));
                 if (!link.text().isEmpty()) {
-                    final Team team = new Team(link.attr("abs:href"), link.text());
+                    final Team team = new Team(new URL(link.attr("abs:href")), link.text());
                     team.getTournaments().add(tournament);
                     teams.add(team);
                 }
-			}
+            }
 
-			for (Team team : teams) {
-				System.out.println(team.getName() + "\t" + team.getUri());
-			}
+            for (Team team : teams) {
+                System.out.println(team.getName() + "\t" + team.getUri());
+            }
 
             tournament.setTeams(teams);
 
             emitTournamentCrawled(tournament);
 
-		} catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             return false;
-		}
+        }
 
         return true;
-	}
+    }
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
         TeamCrawler teamCrawler = new TeamCrawler();
-		TournamentCrawler tc = new TournamentCrawler();
+        TournamentCrawler tc = new TournamentCrawler();
 //        tc.onTournamentCrawled((Tournament tournament) -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
         try {
             tc.crawlTournamentPage("http://www.soccerbase.com/tournaments/tournament.sd?comp_id=78");

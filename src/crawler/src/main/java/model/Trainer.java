@@ -1,22 +1,22 @@
 package model;
 
 public class Trainer {
-	private String name;
+    private String name;
 
-	public Trainer(String name) {
-		this.name = name;
-	}
+    public Trainer(String name) {
+        this.name = name;
+    }
 
-	public Trainer() {
-		this.name = "";
-	}
+    public Trainer() {
+        this.name = "";
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
 }
