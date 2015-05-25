@@ -1,5 +1,6 @@
 version = '1.0'
-def neo4jVersion = "2.2.1"
+def neo4jVersion = '2.2.1'
+def slf4jVersion = '1.7.12'
 
 // Apply the java plugin to add support for Java
 apply plugin: 'java'
@@ -16,25 +17,27 @@ dependencies {
     compile "org.neo4j:neo4j:${neo4jVersion}"
     compile 'javax.json:javax.json-api:1.0'
     runtime 'org.glassfish:javax.json:1.0.4'
-    compile 'org.slf4j:slf4j-api:1.7.12'
-    compile 'org.slf4j:slf4j-simple:1.7.12'
+    compile "org.slf4j:slf4j-api:${slf4jVersion}"
+    compile "org.slf4j:slf4j-simple:${slf4jVersion}"
 
-    testCompile "junit:junit:4.11"
+    testCompile 'junit:junit:4.11'
 }
 
-def neo4JExecutable = System.getProperty("NEO4J_HOME") + "/bin/neo4j"
+def neo4jHome = System.getProperty('NEO4J_HOME')
+def neo4JExecutable = "${neo4jHome}/bin/neo4j"
+def neo4jDataPath = "${neo4jHome}/data/graph.db"
 
 task start_neo4j(type: Exec) {
-    commandLine neo4JExecutable, "start"
+    commandLine neo4JExecutable, 'start'
 }
 
 task stop_neo4j(type: Exec) {
-    commandLine neo4JExecutable, "stop"
+    commandLine neo4JExecutable, 'stop'
 }
 
 task(zipImport, dependsOn: 'classes', type: JavaExec) {
     main = 'importers.ZipImporter'
     classpath = sourceSets.main.runtimeClasspath
-    args "/home/dkofler/opt/neo4j-community-2.2.1/data/graph.db"
-    args "../frontend/data/data.zip"
+    args neo4jDataPath
+    args '../frontend/data/data.zip'
 }
