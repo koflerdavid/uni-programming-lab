@@ -58,6 +58,8 @@ public class ZipImporter {
         assignContracts(playersWithRawContracts, teams);
         importLocations(zipImporterDataFile, teams);
 
+        zipImporterDataFile.getZipFile().close();
+
 //        detectDoublePlayers(playersWithRawContracts);
 
         try (Transaction tx = graphDb.beginTx()) {
@@ -74,6 +76,11 @@ public class ZipImporter {
             });
 
             new TransferCalculator(graphDb).calculateTransfers();
+
+            // Prepare for commit
+            playersWithRawContracts.clear();
+            teams.clear();
+            System.gc();
 
             tx.success();
         }

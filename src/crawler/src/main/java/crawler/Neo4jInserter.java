@@ -25,13 +25,14 @@ public class Neo4jInserter {
 
     public Node createPlayer(Player player) {
         HashMap<String, Object> parameters = new HashMap<>(9);
+        parameters.put("uri", player.getUri().toString());
         parameters.put("name", player.getName());
 
         final String id = player.getUri().getQuery().split("=")[1];
-        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(player.getName(), player.getNationality(), player.getBirthday(), id)));
+        final String slug = Slugifier.generateSlug(Arrays.asList(player.getName(), player.getNationality(), player.getBirthday(), id));
+        parameters.put("slug", slug);
 
         parameters.put("age", player.getAge());
-        parameters.put("uri", player.getUri());
         parameters.put("birthday", player.getBirthday());
         parameters.put("birthplace", player.getBirthplace());
         parameters.put("height", player.getHeight());
@@ -53,11 +54,12 @@ public class Neo4jInserter {
 
     public Node createTeam(Team team) {
         HashMap<String, Object> parameters = new HashMap<>(13);
-        parameters.put("uri", team.getUri());
+        parameters.put("uri", team.getUri().toString());
         parameters.put("name", team.getName());
 
-        String id = team.getUri().getQuery().split("=")[1];
-        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(team.getName(), Integer.toString(team.getYearFormed()), id)));
+        final String id = team.getUri().getQuery().split("=")[1];
+        final String slug = Slugifier.generateSlug(Arrays.asList(team.getName(), Integer.toString(team.getYearFormed()), id));
+        parameters.put("slug", slug);
 
         parameters.put("nickname", team.getNickname());
         parameters.put("website", team.getWebsite());
@@ -87,9 +89,11 @@ public class Neo4jInserter {
     public Node createTournament(Tournament tournament) {
         HashMap<String, Object> parameters = new HashMap<>(4);
 
+        parameters.put("uri", tournament.getUri().toString());
         parameters.put("name", tournament.getName());
-        parameters.put("slug", Slugifier.generateSlug(Arrays.asList(tournament.getName(), tournament.getCountry())));
-        parameters.put("uri", tournament.getUri());
+
+        final String slug = Slugifier.generateSlug(Arrays.asList(tournament.getName(), tournament.getCountry()));
+        parameters.put("slug", slug);
         parameters.put("country", tournament.getCountry());
 
         LOGGER.debug("Create tournament {} (at: {})", tournament.getName(), tournament.getUri());
@@ -124,8 +128,9 @@ public class Neo4jInserter {
     public Relationship addPlayerToTeam(Team team, Player player) {
         HashMap<String, Object> parameters = new HashMap<>(6);
 
-        parameters.put("teamUri", team.getUri());
-        parameters.put("playerUri", player.getUri());
+        parameters.put("teamUri", team.getUri().toString());
+        parameters.put("playerUri", player.getUri().toString());
+
         parameters.put("contractSigned", player.getDateSigned());
         parameters.put("position", player.getPosition());
         parameters.put("fee", player.getFee());
@@ -149,11 +154,12 @@ public class Neo4jInserter {
 
         ArrayList<Relationship> contracts = new ArrayList<>(player.getContracts().size());
 
-        parameters.put("playerUri", player.getUri());
+        parameters.put("playerUri", player.getUri().toString());
 
         try (Transaction tx = graphDb.beginTx()) {
             for (Contract contract : player.getContracts()) {
-                parameters.put("teamUri", contract.getTeam().getUri());
+                parameters.put("teamUri", contract.getTeam().getUri().toString());
+
                 parameters.put("fee", contract.getFee());
                 parameters.put("from", contract.getFrom() != null ? dateFormat.format(contract.getFrom()) : null);
                 parameters.put("to", contract.getTo() != null ? dateFormat.format(contract.getTo()) : null);
