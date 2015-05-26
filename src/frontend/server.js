@@ -233,17 +233,17 @@ fs.createReadStream('data/data.zip').pipe(unzip.Parse()).on('entry',function(ent
 var allrumours = []
 function fetchTwitter(){
     console.log('fetching twitter data')
-    var conKey = '';
-    var conSecret = '';
-    var accTok = '';
-    var accTokSecret = '';
+    var conKey = process.env.CONSUMER_KEY;
+    var conSecret = process.env.CONSUMER_SEC;
+    var accTok = process.env.ACCOUNT_TOK;
+    var accTokSecret = process.env.ACCOUNT_SEC;
     twitter = new twitterAPI({
         consumerKey: conKey,
         consumerSecret: conSecret
     });
     twitter.getTimeline(
             'user_timeline',
-            {screen_name:'deadlinedaylive',count:10},
+            {screen_name:'deadlinedaylive',count:100},
             accTok,
             accTokSecret,
             function(error,data){
