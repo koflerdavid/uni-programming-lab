@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "homepage": "https://github.com/david-westreicher/uni-programming-lab",
   "authors": [
-    "David Westreicher <david.westreicher@gmail.com>"
+    "David Westreicher <david.westreicher@gmail.com>",
+    "David Kofler <D.Kofler@student.uibk.ac.at>",
+    "Matej Stanic <M.Stanic@student.uibk.ac.at"
   ],
   "description": "A visualization for soccer transfers",
   "main": "index.html",
