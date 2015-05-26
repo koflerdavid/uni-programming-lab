@@ -192,16 +192,8 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         updateTeamLocations();
         stats.update();
     }
-    function initTeamLocations(overlays,transfers){
-        var teams = {};
-        if(overlays)
-            overlays.forEach(function(t){
-                teams[t.name] = t;
-            });
-        transfers.forEach(function(t){
-            teams[t.from.name] = t.from;
-            teams[t.to.name] = t.to;
-        });
+
+    function setTeamLocs(teams){
         teamLocs = [];
         Object.keys(teams).forEach(function(t){
             teamLocs.push({
@@ -212,6 +204,28 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
                 visible:true
             });
         });
+    }
+
+    function initRumours(rumours){
+        var teams = {};
+        rumours.forEach(function(rumour){
+            rumour.teams.forEach(function(team){
+                teams[team.name] = team;
+            });
+        });
+        setTeamLocs(teams);
+    }
+    function initTeamLocations(overlays,transfers){
+        var teams = {};
+        if(overlays)
+            overlays.forEach(function(t){
+                teams[t.name] = t;
+            });
+        transfers.forEach(function(t){
+            teams[t.from.name] = t.from;
+            teams[t.to.name] = t.to;
+        });
+        setTeamLocs(teams);
     }
     function updateTeamLocations(){
         var tmp = new THREE.Vector3();
@@ -237,16 +251,33 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
 
     return function(domElement){
         var self = this;
-        self.updateTransfers = function(overlays,transfers,updListener){
+        self.updateAll = function(updListener){
             if(transferGroup!=null)
                 scene.remove(transferGroup);
             transferGroup = new THREE.Group();
-            var curves = generateTransfers(transferGroup,transfers);
-            particles = new Particles(transferGroup,curves);
             scene.add(transferGroup);
-            initTeamLocations(overlays,transfers);
             updateListener = updListener;
+            return transferGroup;
         };
+        self.updateTransfers = function(overlays,transfers,updListener){
+            var newgroup = self.updateAll(updListener);
+            var curves = generateTransfers(newgroup,transfers);
+            particles = new Particles(newgroup);
+            particles.showCurves(curves);
+            initTeamLocations(overlays,transfers);
+        };
+        self.showRumours = function(rumours,updListener){
+            var newgroup = self.updateAll(updListener);
+            var locs = [];
+            rumours.forEach(function(rumour){
+                rumour.teams.forEach(function(team){
+                    locs.push(latlongToXYZ(team.pos));
+                });
+            });
+            particles = new Particles(newgroup);
+            particles.showLocs(locs);
+            initRumours(rumours);
+        }
         self.getTeamLocations = function(){
             return teamLocs;
         };

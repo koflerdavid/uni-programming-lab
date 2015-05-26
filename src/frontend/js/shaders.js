@@ -28,7 +28,7 @@ Shaders = {
             'vColor = customColor;',
             'vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );',
             'gl_Position = projectionMatrix * mvPosition;',
-            'gl_PointSize = float(20.0);',
+            'gl_PointSize = float(50.0);',
         '}'
         ].join('\n'),
         fragmentShader: [

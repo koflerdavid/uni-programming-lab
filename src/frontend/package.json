@@ -15,7 +15,9 @@
         "react-tools": "^0.13.2",
         "byline": "^4.2.1",
         "fs": "^0.0.2",
-        "unzip": "^0.1.11"
+        "unzip": "^0.1.11",
+        "node-twitter-api": "^1.6.0",
+        "unidecode": "^0.1.7"
     },
     "scripts": {
         "start": "node_modules/react-tools/bin/jsx --extension jsx --watch jsx js & node server.js",

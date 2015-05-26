@@ -241,6 +241,28 @@ var DetailView = React.createClass({
             )
     }
 });
+var TwitterDetail = React.createClass({
+    render: function(){
+        var self = this;
+        var rows = [];
+        var rumours = this.props.rumours;
+        if(rumours==null)
+            return <div></div>
+        var index = 0;
+        rumours.forEach(function(rumour){
+            rows.push(<div key={index}>{rumour.rumour.text}</div>);
+            index+=1;
+        });
+        return (
+        <li className='list-group-item'>
+            {this.props.type}
+            <ul className='list-group list-group-transparent'>
+                {rows}
+            </ul>
+        </li>
+        )
+    }
+});
 var App = React.createClass({
     staticURL: {
         Players:'player',
@@ -249,6 +271,7 @@ var App = React.createClass({
     },
     componentDidMount: function(){
         window.globe.setOnSelect(this.onSelect);
+        this.rumours = [];
     },
     render: function(){
         var style ={
@@ -266,21 +289,64 @@ var App = React.createClass({
         var style2 ={
             flex:'1',
         }
+        var style3 ={
+            position:'absolute',
+            zIndex:1002,
+        }
+        var checkb = (
+                    <div style={style3}>
+                        <input type="checkbox" name="asd" onChange={this.onRumourChange} defaultChecked={this.state.showRumour}/>
+                    </div>
+                );
+        if(this.state.showRumour)
+            return (<div>
+                        {checkb}
+                        <div style={style} >
+                            <TwitterDetail rumours={this.state.selected}/>
+                        </div>
+                    </div>)
         return (
-        <div style={style}>
-            <IntelliSearch onSelect={this.onSelect} />
-            <DetailView selected={this.state.selected} onSelected={this.onSelect} />
-            <div style={style2}></div>
+        <div>
+            {checkb}
+            <div style={style}>
+                <IntelliSearch onSelect={this.onSelect} />
+                <DetailView selected={this.state.selected} onSelected={this.onSelect} />
+                <div style={style2}></div>
+            </div>
         </div>
         )
+    },
+    onRumourChange: function(e){
+        window.globe.clear();
+        var self = this;
+        var newstate = !this.state.showRumour
+        self.setState({selected:null,showRumour:newstate});
+        if(newstate){
+            $.getJSON('/rumours/', function(result){
+                self.rumours = result;
+                if(self.state.showRumour)
+                    window.globe.showRumours(result);
+            });
+        }
     },
     onSelect: function(e){
         var self = this;
         if(!e){
             if(self.isMounted())
                 self.setState(this.getInitialState());
-            window.globe.updateTransfers(null,[]);
+            window.globe.clear();
             return
+        }
+        if(this.state.showRumour){
+            rumourfiltered = []
+            this.rumours.forEach(function(rumour){
+                rumour.teams.forEach(function(team){
+                    if(team.uid==e.uid)
+                        rumourfiltered.push(rumour);
+                })
+            });
+            this.setState({selected:rumourfiltered});
+            return;
         }
         $.getJSON("/"+this.staticURL[e.type]+'/'+e.uid, function(result){
             result.type = e.type;
@@ -308,7 +374,7 @@ var App = React.createClass({
         });
     },
     getInitialState: function(){
-        return {selected:null}
+        return {selected:null,showRumour:false}
     }
 });
 

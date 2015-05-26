@@ -2,6 +2,8 @@ var express = require('express');
 var byline = require('byline');
 var unzip = require('unzip');
 var fs = require('fs');
+var twitterAPI = require('node-twitter-api');
+var unidecode = require('unidecode');
 
 var port = process.env.PORT || 8080;
 
@@ -48,6 +50,10 @@ app.get('/search', function (req, res) {
         Players:players,
         Teams:teams
     }));
+});
+
+app.get('/rumours', function (req, res) {
+    res.send(JSON.stringify(allrumours));
 });
 
 app.get('/tournaments', function (req, res) {
@@ -195,7 +201,9 @@ fs.createReadStream('data/data.zip').pipe(unzip.Parse()).on('entry',function(ent
     if(entry.path=='players.dat'){
         arr = allplayers;
         preprocess = function(player){
-            player.namelowercase = player.name.toLowerCase();
+            var name = player.name.trim();
+            name = name.replace(/\d+\. /,'');
+            player.namelowercase = name.toLowerCase();
         }
     }else if(entry.path=='teamtransfers.dat'){
         arr = allteamtransfers
@@ -213,7 +221,7 @@ fs.createReadStream('data/data.zip').pipe(unzip.Parse()).on('entry',function(ent
         arr = allteams
         defaul = {}
         preprocess = function(team){
-            team.namelowercase = team.name.toLowerCase();
+            team.namelowercase = team.name.trim().toLowerCase();
             team.uid = allteams.length+1;
         }
     }
@@ -222,3 +230,53 @@ fs.createReadStream('data/data.zip').pipe(unzip.Parse()).on('entry',function(ent
     entry.autodrain();
 });
 
+var allrumours = []
+function fetchTwitter(){
+    console.log('fetching twitter data')
+    var conKey = '';
+    var conSecret = '';
+    var accTok = '';
+    var accTokSecret = '';
+    twitter = new twitterAPI({
+        consumerKey: conKey,
+        consumerSecret: conSecret
+    });
+    twitter.getTimeline(
+            'user_timeline',
+            {screen_name:'deadlinedaylive',count:10},
+            accTok,
+            accTokSecret,
+            function(error,data){
+                if(error){
+                    console.log(error);
+                }else{
+                    data.forEach(function(stat){
+                        var text = unidecode(stat.text).toLowerCase();
+                        var players = []
+                        var teams = []
+                        for(var i =0;i<allplayers.length;i++){
+                            var player = allplayers[i];
+                            if(!player || !player.namelowercase || player.namelowercase.indexOf(' ')<0)
+                                continue;
+                            if(text.indexOf(player.namelowercase)>-1){
+                                players.push(player.name)
+                            }
+                        }
+                        for(var i =0;i<allteams.length;i++){
+                            var team = allteams[i];
+                            if(!team || !team.namelowercase)
+                                continue;
+                            if(text.indexOf(team.namelowercase)>-1){
+                                var details = getTransferDetails(team.id);
+                                if(details)
+                                    teams.push(details);
+                            }
+                        }
+                        var rumour = {text:stat.text,link:stat.url};
+                        allrumours.push({rumour:rumour,teams:teams,players:players});
+                    });
+                }
+            }
+    );
+}
+setTimeout(fetchTwitter,10000);
