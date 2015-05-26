@@ -245,21 +245,31 @@ var TwitterDetail = React.createClass({
     render: function(){
         var self = this;
         var rows = [];
-        var rumours = this.props.rumours;
+        if(!this.props.selected)
+            return <div></div>
+        var rumours = this.props.selected.rumours;
         if(rumours==null)
             return <div></div>
         var index = 0;
         rumours.forEach(function(rumour){
-            rows.push(<div key={index}>{rumour.rumour.text}</div>);
+            rows.push(<li className='list-group-item' key={index}>
+                            {rumour.rumour.text}
+                        </li>);
             index+=1;
         });
+        var style = {
+            overflow:'auto',
+            pointerEvents:'auto'
+        }
         return (
-        <li className='list-group-item'>
-            {this.props.type}
-            <ul className='list-group list-group-transparent'>
-                {rows}
-            </ul>
-        </li>
+            <div className={"panel panel-info panel-transparent"} style={style}>
+                <div className="panel-heading">
+                    <h6>{this.props.selected.teamname}</h6>
+                </div>
+                <ul className='list-group list-group-transparent'>
+                    {rows}
+                </ul>
+            </div>
         )
     }
 });
@@ -298,9 +308,11 @@ var App = React.createClass({
         }
         var details = null;
         if (this.state.showRumour)
-            details =   (<TwitterDetail rumours={this.state.selected}/>)
+            details = (<div style={style}>
+                            <TwitterDetail selected={this.state.selected}/>
+                       </div>)
         else
-            details = (<div>
+            details = (<div style={style}>
                             <IntelliSearch onSelect={this.onSelect} />
                             <DetailView selected={this.state.selected} onSelected={this.onSelect} />
                             <div style={style2}></div>
@@ -310,9 +322,7 @@ var App = React.createClass({
             <div style={style3}>
                 <input type="checkbox" id='rumourcheckbox' defaultChecked={this.state.showRumour} data-toggle="toggle" data-on="Rumours" data-off="Search"/>
             </div>
-            <div style={style}>
-                {details}
-            </div>
+            {details}
         </div>
         )
     },
@@ -338,14 +348,17 @@ var App = React.createClass({
             return
         }
         if(this.state.showRumour){
-            rumourfiltered = []
+            var rumourfiltered = [];
+            var name = "";
             this.rumours.forEach(function(rumour){
                 rumour.teams.forEach(function(team){
-                    if(team.uid==e.uid)
+                    if(team.uid==e.uid){
                         rumourfiltered.push(rumour);
+                        name = team.name;
+                    }
                 })
             });
-            this.setState({selected:rumourfiltered});
+            this.setState({selected:{rumours:rumourfiltered,teamname:name}});
             return;
         }
         $.getJSON("/"+this.staticURL[e.type]+'/'+e.uid, function(result){
