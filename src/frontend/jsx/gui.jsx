@@ -308,7 +308,7 @@ var App = React.createClass({
         return (
         <div>
             <div style={style3}>
-                <input type="checkbox" id='rumourcheckbox' data-toggle="toggle" data-on="Rumours" data-off="Search"/>
+                <input type="checkbox" id='rumourcheckbox' defaultChecked={this.state.showRumour} data-toggle="toggle" data-on="Rumours" data-off="Search"/>
             </div>
             <div style={style}>
                 {details}
@@ -374,7 +374,7 @@ var App = React.createClass({
         });
     },
     getInitialState: function(){
-        return {selected:null,showRumour:true}
+        return {selected:null,showRumour:false}
     }
 });
 
