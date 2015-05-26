@@ -271,6 +271,7 @@ var App = React.createClass({
     },
     componentDidMount: function(){
         window.globe.setOnSelect(this.onSelect);
+        $('#rumourcheckbox').change(this.onRumourChange);
         this.rumours = [];
     },
     render: function(){
@@ -291,27 +292,26 @@ var App = React.createClass({
         }
         var style3 ={
             position:'absolute',
+            paddingTop:'2rem',
+            paddingLeft:'2rem',
             zIndex:1002,
         }
-        var checkb = (
-                    <div style={style3}>
-                        <input type="checkbox" name="asd" onChange={this.onRumourChange} defaultChecked={this.state.showRumour}/>
-                    </div>
-                );
-        if(this.state.showRumour)
-            return (<div>
-                        {checkb}
-                        <div style={style} >
-                            <TwitterDetail rumours={this.state.selected}/>
-                        </div>
-                    </div>)
+        var details = null;
+        if (this.state.showRumour)
+            details =   (<TwitterDetail rumours={this.state.selected}/>)
+        else
+            details = (<div>
+                            <IntelliSearch onSelect={this.onSelect} />
+                            <DetailView selected={this.state.selected} onSelected={this.onSelect} />
+                            <div style={style2}></div>
+                       </div>)
         return (
         <div>
-            {checkb}
+            <div style={style3}>
+                <input type="checkbox" id='rumourcheckbox' data-toggle="toggle" data-on="Rumours" data-off="Search"/>
+            </div>
             <div style={style}>
-                <IntelliSearch onSelect={this.onSelect} />
-                <DetailView selected={this.state.selected} onSelected={this.onSelect} />
-                <div style={style2}></div>
+                {details}
             </div>
         </div>
         )
@@ -374,7 +374,7 @@ var App = React.createClass({
         });
     },
     getInitialState: function(){
-        return {selected:null,showRumour:false}
+        return {selected:null,showRumour:true}
     }
 });
 
