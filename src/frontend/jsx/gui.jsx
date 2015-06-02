@@ -287,6 +287,39 @@ var DetailView = React.createClass({
     }
 });
 
+var TwitterDetail = React.createClass({
+    render: function(){
+        var self = this;
+        var rows = [];
+        if(!this.props.selected)
+            return <div></div>
+        var rumours = this.props.selected.rumours;
+        if(rumours==null)
+            return <div></div>
+        var index = 0;
+        rumours.forEach(function(rumour){
+            rows.push(<li className='list-group-item' key={index}>
+                            {rumour.rumour.text}
+                        </li>);
+            index+=1;
+        });
+        var style = {
+            overflow:'auto',
+            pointerEvents:'auto'
+        }
+        return (
+            <div className={"panel panel-info panel-transparent"} style={style}>
+                <div className="panel-heading">
+                    <h6>{this.props.selected.teamname}</h6>
+                </div>
+                <ul className='list-group list-group-transparent'>
+                    {rows}
+                </ul>
+            </div>
+        )
+    }
+});
+
 var App = React.createClass({
     staticURL: {
         Players:'player',
@@ -296,33 +329,71 @@ var App = React.createClass({
 
     componentDidMount: function(){
         window.globe.setOnSelect(this.onSelect);
+        $('#rumourcheckbox').change(this.onRumourChange);
+        this.rumours = [];
     },
 
-    render: function(){
+    render: function() {
         var style = {
-            position:'absolute',
-            right:'0px',
-            width:'20%',
-            zIndex:1001,
-            display:'flex',
-            flexDirection:'column',
-            height:'100%',
-            paddingTop:'2rem',
-            paddingRight:'2rem',
-            pointerEvents:'none'
+            position: 'absolute',
+            right: '0px',
+            width: '20%',
+            zIndex: 1001,
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            paddingTop: '2rem',
+            paddingRight: '2rem',
+            pointerEvents: 'none'
         };
 
         var style2 = {
-            flex:'1'
+            flex: '1'
         };
 
-        return (
-            <div style={style}>
+        var style3 = {
+            position: 'absolute',
+            paddingTop: '2rem',
+            paddingLeft: '2rem',
+            zIndex: 1002
+        };
+
+        var details = null;
+        if (this.state.showRumour) {
+            details = (<div style={style}>
+                <TwitterDetail selected={this.state.selected}/>
+            </div>)
+        } else {
+            details = (<div style={style}>
                 <IntelliSearch onSelect={this.onSelect} />
                 <DetailView selected={this.state.selected} onSelected={this.onSelect} />
                 <div style={style2}></div>
+            </div>);
+        }
+
+        return (
+            <div>
+                <div style={style3}>
+                    <input type="checkbox" id='rumourcheckbox' defaultChecked={this.state.showRumour} data-toggle="toggle" data-on="Rumours" data-off="Search"/>
+                </div>
+                {details}
             </div>
         );
+    },
+
+    onRumourChange: function(e){
+        window.globe.clear();
+        var self = this;
+        var newstate = !this.state.showRumour
+        self.setState({selected:null,showRumour:newstate});
+
+        if(newstate){
+            $.getJSON('/rumours/', function(result){
+                self.rumours = result;
+                if(self.state.showRumour)
+                    window.globe.showRumours(result);
+            });
+        }
     },
 
     onSelect: function(e){
@@ -332,7 +403,23 @@ var App = React.createClass({
                 self.setState(this.getInitialState());
             }
 
-            window.globe.updateTransfers(null,[]);
+            window.globe.clear();
+            return;
+        }
+
+        if(this.state.showRumour){
+            var rumourfiltered = [];
+            var name = "";
+            this.rumours.forEach(function(rumour){
+                rumour.teams.forEach(function(team){
+                    if(team.uid==e.uid){
+                        rumourfiltered.push(rumour);
+                        name = team.name;
+                    }
+                })
+            });
+
+            this.setState({selected:{rumours:rumourfiltered,teamname:name}});
             return;
         }
 
@@ -382,7 +469,7 @@ var App = React.createClass({
     },
 
     getInitialState: function(){
-        return {selected:null}
+        return {selected:null,showRumour:false}
     }
 });
 

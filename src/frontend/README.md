@@ -8,12 +8,24 @@ You need node/npm:
 ```sh
 $ npm install
 ```
+
 Run
 ----
+You need a valid twitter consumer_(key/secret) and account_(token/secret)
+put them into setenv.sh
 ```sh
+$ source setenv.sh
 $ npm start
 ```
 and visit ```localhost:8080```
+
+Deploy
+-----
+```sh
+$ git subtree push --prefix src/frontend heroku master
+$ heroku config:add CONSUMER_KEY={con_key} CONSUMER_SEC={con_sec} ACCOUNT_TOK={auth_tok} ACCOUNT_SEC={auth_sec}
+```
+
 
 Tech
 ----
