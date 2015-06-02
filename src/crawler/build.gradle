@@ -41,3 +41,10 @@ task(zipImport, dependsOn: 'classes', type: JavaExec) {
     args neo4jDataPath
     args '../frontend/data/data.zip'
 }
+
+task(locationsImport, dependsOn: 'classes', type: JavaExec) {
+    main = 'importers.LocationsImporter'
+    classpath = sourceSets.main.runtimeClasspath
+    args neo4jDataPath
+    args 'locations.dat'
+}
