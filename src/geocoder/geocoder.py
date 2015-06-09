@@ -12,20 +12,22 @@ graph = Graph()
 if len(sys.argv) > 1 and sys.argv[1] == "force":
     teams = graph.cypher.execute("MATCH (n:Team) WHERE n.name IS NOT NULL RETURN n.slug, n.ground")
 else:
-    teams = graph.cypher.execute("MATCH (n:Team) WHERE n.name IS NOT NULL AND (n.lng IS NULL OR n.lat IS NULL) RETURN n.slug, n.ground")
-
+    #teams = graph.cypher.execute("MATCH (n:Team) WHERE n.name IS NOT NULL AND (n.lng IS NULL OR n.lat IS NULL) RETURN n.name, n.ground, n.slug")
+    teams = graph.cypher.execute("MATCH (n:Team) RETURN n.name, n.ground, n.slug")
 print teams
 
 # perform geocoding query for every stadium
 for team in teams:
     print team[0]
     print team[1]
-
-    if not team[1]:
-        continue
-
+    
     query = "http://api.opencagedata.com/geocode/v1/geojson?query="
-    query += urllib.quote_plus(team[1])
+    if team[1]:
+        query += urllib.quote_plus(team[1])
+    elif team[0]:
+        query += urllib.quote_plus(team[0])
+    else:
+        continue
     query += "&key=4dcb09ee02f88ed8b6d6575a702a3414&limit=1"
     print query
     result = str(urllib2.urlopen(query).read())
@@ -41,7 +43,16 @@ for team in teams:
     json_result = json.loads(result)
 
     if len(json_result['features']) == 0:
-        continue
+        if team[1]:
+            query = "http://api.opencagedata.com/geocode/v1/geojson?query="
+            query += urllib.quote_plus(team[0])
+            query += "&key=4dcb09ee02f88ed8b6d6575a702a3414&limit=1"
+            print query
+            result = str(urllib2.urlopen(query).read())
+            result = result.replace("u\"","\"").replace("u\'","\'")
+            json_result = json.loads(result)
+        if len(json_result['features']) == 0:
+            continue
 
     print type(json_result['features'][0]['geometry']['coordinates'])
     print 'lng'
@@ -51,11 +62,11 @@ for team in teams:
 
     # put into database
     cypher_query = "MATCH (n:Team { slug: {slug} }) SET n.lng = {lng}, n.lat = {lat} RETURN n"
-    parameters = {'slug': team[0],
+    parameters = {'slug': team[2],
                   'lng': json_result['features'][0]['geometry']['coordinates'][0],
                   'lat': json_result['features'][0]['geometry']['coordinates'][1]}
 
     print cypher_query
     graph.cypher.execute(cypher_query, parameters)
 
-    time.sleep(5)
+    time.sleep(1.5)

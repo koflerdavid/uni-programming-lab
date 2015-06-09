@@ -17,7 +17,12 @@
         "fs": "^0.0.2",
         "unzip": "^0.1.11",
         "node-twitter-api": "^1.6.0",
-        "unidecode": "^0.1.7"
+        "unidecode": "^0.1.7",
+        "underscore": "1.8.*",
+        "request": "latest",
+        "cheerio": "latest",
+        "sentiment": "latest"
+
     },
     "scripts": {
         "start": "node_modules/react-tools/bin/jsx --extension jsx --watch jsx js & node index.js",
