@@ -1,0 +1,4 @@
+export CONSUMER_KEY=
+export CONSUMER_SEC=
+export ACCOUNT_TOK=
+export ACCOUNT_SEC=

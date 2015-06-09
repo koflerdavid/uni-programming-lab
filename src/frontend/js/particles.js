@@ -1,17 +1,18 @@
-var Particles = function(scene,curves) { 
+var Particles = function(scene) { 
     var self = this;
     self.scene = scene;
-    self.curves = curves;
+    self.curves = null;
+    self.locs = null;
     self.particles = [];
-    self.init = function(){
-        /*var material = new THREE.PointCloudMaterial({
-            color: 0xff0000,
-            size:20,
-            blending: THREE.AdditiveBlending,
-            sizeAttenuation: false,
-            transparent:true,
-            depthWrite:false,
-            map:THREE.ImageUtils.loadTexture('img/particle2.png')});*/
+    self.showCurves = function(curves){
+        self.curves = curves;
+        self.init();
+    }
+    self.showLocs = function(locs){
+        self.locs = locs;
+        self.init();
+    }
+    self.getMaterial = function(){
         var shader = Shaders.particles;
         var uniforms = {
             texture: {type:'t', value: THREE.ImageUtils.loadTexture('img/particle2.png')}
@@ -28,8 +29,20 @@ var Particles = function(scene,curves) {
             depthWrite:false,
             transparent:true,
         });
-
-
+        return shmaterial;
+    }
+    self.getLocGeom = function(attributes){
+        var geometry = new THREE.Geometry();
+        var verts = geometry.vertices;
+        for(var i=0;i<self.locs.length;i++){
+            var loc = self.locs[i];
+            var col = new THREE.Color(1,1,1);
+            verts.push(loc);
+            attributes.customColor.value.push(col);
+        }
+        return geometry;
+    }
+    self.getCurveGeom = function(attributes){
         var geometry = new THREE.Geometry();
         var verts = geometry.vertices;
         for(var i=0;i<self.curves.length;i++){
@@ -46,10 +59,18 @@ var Particles = function(scene,curves) {
                 });
             }
         }
-        self.pointCloud = new THREE.PointCloud( geometry, shmaterial);
+        return geometry;
+    }
+    self.init = function(){
+        var mat = self.getMaterial();
+        var attributes = mat.attributes;
+        var geom = self.curves?self.getCurveGeom(attributes):self.getLocGeom(attributes)
+        self.pointCloud = new THREE.PointCloud(geom, mat);
         self.scene.add(self.pointCloud);
     }
     self.update = function() {
+        if(!self.curves)
+            return;
         var verts = self.pointCloud.geometry.vertices;
         for(var i=0;i<self.particles.length;i++){
             var p = self.particles[i];
@@ -76,5 +97,4 @@ var Particles = function(scene,curves) {
         }
         self.pointCloud.geometry.verticesNeedUpdate = true;
     }
-    self.init();
 };
