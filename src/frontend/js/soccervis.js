@@ -50,6 +50,8 @@ Soccervis.prototype.getTeam = function (teamSlug) {
         'RETURN team, currentPlayers, leaves + joins AS transfers'
     ];
 
+	console.log(queryParts.join(' '));
+
     return this.graphdb()
         .query(queryParts.join(' '), {}, {
             teamSlug: teamSlug
