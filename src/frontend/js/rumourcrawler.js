@@ -153,6 +153,14 @@ app.listen('8081');
 console.log('Magic happens on port 8081');
 exports = module.exports = app;
 
+/**
+ * Wrapps callable so that it gets executed at most once in the specified interval.
+ * If options.immedeately is set to true, then the callable is executed immediately.
+ * @param callable
+ * @param interval
+ * @param options
+ * @returns {Function}
+ */
 function onceEveryElseCache(callable, interval, options) {
     var lastTime = null;
     var oldResult;
