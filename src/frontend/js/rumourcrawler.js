@@ -1,14 +1,15 @@
+var Promise = require('bluebird');
+var cheerio = require('cheerio');
 var express = require('express');
 var fs = require('fs');
 var request = require('request');
-var cheerio = require('cheerio');
 var sentiment = require('sentiment');
-var app     = express();
-var ourPassword = "1234";
-var Promise = require('bluebird');
 var _ = require('underscore');
 
 var requestP = Promise.promisify(request);
+
+var ourPassword = "1234";
+var app     = express();
 
 app.get('/scrape/:password', function(req, res){
 
@@ -76,6 +77,15 @@ app.get('/scrape/:password', function(req, res){
                             links.push($(data[i]).attr("href"));
                         }
                     });
+
+                    for(var i = 0; i < names.length; i++){
+                        if(names[i] == "error"){
+                            names.splice(i,1);
+                            toTeams.splice(i,1);
+                            probs.splice(i,1);
+                            links.splice(i,1);
+                        }
+                    }
                     console.dir( $('.page.selected').text() + "  " + names[0]);
                     var resultPromises = doSentimentAnalysisForNames(names, toTeams, probs, links);
 
@@ -87,7 +97,11 @@ app.get('/scrape/:password', function(req, res){
         })
         .then(function() {
             Promise.all(pages).then(function (pages) {
+                pages = Array.prototype.concat.apply([], pages);
                 res.json(pages);
+                fs.writeFile('../data/rumourdata.json', JSON.stringify(pages, null, 4), function(err){
+                    console.log('File successfully written!')
+                });
             });
         });
 });
