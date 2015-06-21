@@ -1,12 +1,15 @@
+var Promise = require('bluebird');
+var cheerio = require('cheerio');
 var express = require('express');
 var fs = require('fs');
 var request = require('request');
-var cheerio = require('cheerio');
 var sentiment = require('sentiment');
-var app     = express();
-var ourPassword = "1234";
-var Promise = require('bluebird');
 var _ = require('underscore');
+
+var requestP = Promise.promisify(request);
+
+var ourPassword = "1234";
+var app     = express();
 
 app.get('/scrape/:password', function(req, res){
 
@@ -14,72 +17,97 @@ app.get('/scrape/:password', function(req, res){
         res.status(403).send("Access Denied")
     }
 
-    var probs = new Array();
-    var names = new Array();
-    var toTeams = new Array();
-    var links = new Array();
-    var data;
+    var baseuri = 'http://www.transfermarkt.co.uk/rumourmill/detail/forum/180/ajax/threadList';
+    var pages = [];
 
-    // TODO while loop for every page
+    Promise.resolve([1,2,3,4])
+    //Promise.resolve([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20])
+        .each(function(page) {
+            var uri = baseuri;
+            uri += "/page/";
+            uri += page;
+            sleep(2000);
+            console.dir(uri);
 
-    var options = {
-        url: 'http://www.transfermarkt.co.uk/rumourmill/detail/forum/180/ajax/threadList',
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'
-        }
-    };
-
-    request(options, function(error, response, html){
-        if(!error){
-            var $ = cheerio.load(html);
-
-            $('.no-border-links.text-center').filter(function(){
-                data = $(this).children();
-                for (var i = 0; i < data.length; i++) {
-                    if(data[i].children[0].data == '?' || data[i].children[0].data.length > 1 ) {
-                        probs.push(data[i].children[0].data);
-                    }
+            var options = {
+                url: uri,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'
                 }
-            })
+            };
 
-            $('.board_titel.spielprofil_tooltip').filter(function(){
-                data = $(this);
-                for (var i = 0; i < data.length; i++) {
-                    var rumour = $(data[i]).attr("title");
-                    var res;
-                    if (rumour.indexOf(" to ") != -1) {
-                        res = rumour.split(" to ");
-                        names.push(res[0]);
-                        toTeams.push(res[1].substring(0,res[1].length-1));
-                    } else if (rumour.indexOf(" interested in ") != -1) {
-                        res = rumour.split(" interested in ");
-                        names.push(res[1]);
-                        toTeams.push(res[0]);
-                    } else if (rumour.indexOf(" in trials with ") != -1) {
-                        res = rumour.split(" in trials with ");
-                        names.push(res[0]);
-                        toTeams.push(res[1]);
-                    } else {
-                        names.push("error");
-                        toTeams.push("error");
+            pages.push(requestP(options)
+                .spread(function(response, html) {
+                    var $ = cheerio.load(html);
+                    var probs = new Array();
+                    var names = new Array();
+                    var toTeams = new Array();
+                    var links = new Array();
+
+                    $('.no-border-links.text-center').filter(function () {
+                        var data = $(this).children();
+                        for (var i = 0; i < data.length; i++) {
+                            if (data[i].children[0].data == '?' || data[i].children[0].data.length > 1) {
+                                probs.push(data[i].children[0].data);
+                            }
+                        }
+                    });
+
+                    $('.board_titel.spielprofil_tooltip').filter(function () {
+                        var data = $(this);
+                        for (var i = 0; i < data.length; i++) {
+                            var rumour = $(data[i]).attr("title");
+                            var res;
+                            if (rumour.indexOf(" to ") != -1) {
+                                res = rumour.split(" to ");
+                                names.push(res[0]);
+                                toTeams.push(res[1].substring(0, res[1].length - 1));
+                            } else if (rumour.indexOf(" interested in ") != -1) {
+                                res = rumour.split(" interested in ");
+                                names.push(res[1]);
+                                toTeams.push(res[0]);
+                            } else if (rumour.indexOf(" in trials with ") != -1) {
+                                res = rumour.split(" in trials with ");
+                                names.push(res[0]);
+                                toTeams.push(res[1]);
+                            } else {
+                                names.push("error");
+                                toTeams.push("error");
+                            }
+                            links.push($(data[i]).attr("href"));
+                        }
+                    });
+
+                    for(var i = 0; i < names.length; i++){
+                        if(names[i] == "error"){
+                            names.splice(i,1);
+                            toTeams.splice(i,1);
+                            probs.splice(i,1);
+                            links.splice(i,1);
+                        }
                     }
-                    links.push($(data[i]).attr("href"));
-                }
-            })
+                    console.dir( $('.page.selected').text() + "  " + names[0]);
+                    var resultPromises = doSentimentAnalysisForNames(names, toTeams, probs, links);
 
-        }
+                    return Promise.all(resultPromises);
 
-        var resultPromises = doSentimentAnalysisForNames(names, toTeams, probs, links);
+                    //return Promise.resolve(html);
 
-        Promise.all(resultPromises)
-            .then(function(result) {
-                
-                res.json(result);
+                }));
+        })
+        .then(function() {
+            Promise.all(pages).then(function (pages) {
+                pages = Array.prototype.concat.apply([], pages);
+                res.json(pages);
+                fs.writeFile('../data/rumourdata.json', JSON.stringify(pages, null, 4), function(err){
+                    console.log('File successfully written!')
+                });
             });
-    }) ;
-})
+        });
+});
 
-var doSentimentAnalysisForNames = onceEveryElseCache(function (names, toTeams, probs, links) {
+var doSentimentAnalysisForNames = function (names, toTeams, probs, links) {
+    console.log(names[0]);
     var pSentimentAnalysis = Promise.promisify(sentimentAnalysis);
     return names.map(function (name, i) {
         return pSentimentAnalysis(links[i])
@@ -96,7 +124,7 @@ var doSentimentAnalysisForNames = onceEveryElseCache(function (names, toTeams, p
                 return [name, toTeams[i], probs[i], links[i], score, comparative];
             });
     });
-}, 45*1000);
+};
 
 function sleep(milliseconds) {
     var start = new Date().getTime();
@@ -152,33 +180,3 @@ function sentimentAnalysis(link, callback){
 app.listen('8081');
 console.log('Magic happens on port 8081');
 exports = module.exports = app;
-
-/**
- * Wrapps callable so that it gets executed at most once in the specified interval.
- * If options.immedeately is set to true, then the callable is executed immediately.
- * @param callable
- * @param interval
- * @param options
- * @returns {Function}
- */
-function onceEveryElseCache(callable, interval, options) {
-    var lastTime = null;
-    var oldResult;
-
-    var wrapper = function() {
-        var now = Date.now();
-        if (lastTime == null || now > lastTime + interval) {
-            console.log(now, lastTime, lastTime + interval);
-            lastTime = now;
-            oldResult = callable.apply(this, arguments);
-        }
-
-        return oldResult;
-    };
-
-    if (options != null && options.immediately) {
-        oldResult = wrapper();
-    }
-
-    return wrapper;
-}
