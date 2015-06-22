@@ -20,9 +20,13 @@ var Globe = (function(){
             overlayrenderer.reset();
             glrenderer.updateTransfers(overlays,transfers,handleUpdate);
         }
-        this.showRumours = function(rumours){
+        this.showTwitterRumours = function(rumours){
             overlayrenderer.reset();
-            glrenderer.showRumours(rumours,handleUpdate);
+            glrenderer.showTwitterRumours(rumours,handleUpdate);
+        }
+        this.showTransferRumours = function(rumours){
+            overlayrenderer.reset(true);
+            glrenderer.showTransferRumours(rumours,handleUpdate);
         }
         this.setOnSelect = function(onSelect){
             overlayrenderer.setOnSelect(onSelect);

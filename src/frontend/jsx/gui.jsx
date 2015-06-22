@@ -320,6 +320,45 @@ var TwitterDetail = React.createClass({
     }
 });
 
+var RumourDetail = React.createClass({
+
+    addRow:function(rows,name,data){
+        rows.push(<DetailRow name={name} data={data} key={name}/>);
+    },
+    render: function(){
+        var self = this;
+        var rows = [];
+        if(!this.props.selected)
+            return <div></div>
+        var rumour = this.props.selected.rumour;
+        if(!rumour)
+            return <div></div>
+        this.addRow(rows,'From',rumour.from.name);
+        this.addRow(rows,'To',rumour.to.name);
+        if(rumour.prob && rumour.prob!='?')
+            this.addRow(rows,'Probabilty',rumour.prob);
+        if(rumour.score)
+            this.addRow(rows,'Opinion',rumour.score);
+        var baseurl = "http://www.transfermarkt.co.uk";
+        var link = (<a href={baseurl+rumour.link}>Source</a>);
+        this.addRow(rows,'Link',link);
+        var style = {
+            overflow:'auto',
+            pointerEvents:'auto'
+        }
+        return (
+            <div className={"panel panel-info panel-transparent"} style={style}>
+                <div className="panel-heading">
+                    <h6>{this.props.selected.rumour.player}</h6>
+                </div>
+                <ul className='list-group list-group-transparent'>
+                    {rows}
+                </ul>
+            </div>
+        )
+    }
+});
+
 var App = React.createClass({
     staticURL: {
         Players:'player',
@@ -329,8 +368,8 @@ var App = React.createClass({
 
     componentDidMount: function(){
         window.globe.setOnSelect(this.onSelect);
-        $('#rumourcheckbox').change(this.onRumourChange);
-        this.rumours = [];
+        var self = this;
+        $('#state input').click(function(){self.onStateChange(this.name);});
     },
 
     render: function() {
@@ -359,9 +398,13 @@ var App = React.createClass({
         };
 
         var details = null;
-        if (this.state.showRumour) {
+        if (this.state.currentstate=='twitter') {
             details = (<div style={style}>
                 <TwitterDetail selected={this.state.selected}/>
+            </div>)
+        } else if(this.state.currentstate=='rumour'){
+            details = (<div style={style}>
+                <RumourDetail selected={this.state.selected}/>
             </div>)
         } else {
             details = (<div style={style}>
@@ -374,24 +417,41 @@ var App = React.createClass({
         return (
             <div>
                 <div style={style3}>
-                    <input type="checkbox" id='rumourcheckbox' defaultChecked={this.state.showRumour} data-toggle="toggle" data-on="Rumours" data-off="Search"/>
+                    <div className="btn-group" data-toggle="buttons" id="state">
+                        <label className={"btn btn-default" + (this.state.currentstate=="search"?" active":"")}>
+                            <input name="search" checked="" type="radio">Search</input>
+                        </label>
+                        <label className={"btn btn-default" + (this.state.currentstate=="twitter"?" active":"")}>
+                            <input name="twitter" type="radio">Twitter</input>
+                        </label>
+                        <label className={"btn btn-default" + (this.state.currentstate=="rumour"?" active":"")}>
+                            <input name="rumour" type="radio">Rumours</input>
+                        </label>
+                    </div>  
                 </div>
                 {details}
             </div>
         );
     },
 
-    onRumourChange: function(e){
+    onStateChange: function(newstate){
+        if(newstate==this.state.currentstate)
+            return;
         window.globe.clear();
         var self = this;
-        var newstate = !this.state.showRumour
-        self.setState({selected:null,showRumour:newstate});
-
-        if(newstate){
-            $.getJSON('/rumours/', function(result){
+        self.setState({selected:null,currentstate:newstate});
+        this.rumours = [];
+        if(newstate=='twitter'){
+            $.getJSON('/twitterrumours/', function(result){
                 self.rumours = result;
-                if(self.state.showRumour)
-                    window.globe.showRumours(result);
+                if(self.state.currentstate=='twitter')
+                    window.globe.showTwitterRumours(result);
+            });
+        }else if(newstate=='rumour'){
+            $.getJSON('/transferrumours/', function(result){
+                self.rumours = result;
+                if(self.state.currentstate=='rumour')
+                    window.globe.showTransferRumours(result);
             });
         }
     },
@@ -407,7 +467,7 @@ var App = React.createClass({
             return;
         }
 
-        if(this.state.showRumour){
+        if(this.state.currentstate=='twitter'){
             var rumourfiltered = [];
             var name = "";
             this.rumours.forEach(function(rumour){
@@ -420,6 +480,9 @@ var App = React.createClass({
             });
 
             this.setState({selected:{rumours:rumourfiltered,teamname:name}});
+            return;
+        }else if (this.state.currentstate=='rumour'){
+            this.setState({selected:{rumour:e.rumour}});
             return;
         }
 
@@ -469,7 +532,7 @@ var App = React.createClass({
     },
 
     getInitialState: function(){
-        return {selected:null,showRumour:false}
+        return {selected:null,currentstate:'search'}
     }
 });
 

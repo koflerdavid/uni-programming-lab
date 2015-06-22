@@ -25,7 +25,7 @@
 
     },
     "scripts": {
-        "start": "node_modules/react-tools/bin/jsx --extension jsx --watch jsx js & node index.js",
+        "start": "node_modules/react-tools/bin/jsx --extension jsx --watch jsx js & node server.js",
         "postinstall": "node_modules/bower/bin/bower install"
     },
     "license": "MIT"
