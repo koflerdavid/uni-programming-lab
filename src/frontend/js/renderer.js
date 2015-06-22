@@ -109,8 +109,8 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         var curves = [];
         for(var i=0;i<transfers.length;i++){
             var transfer = transfers[i];
-            var from = latlongToXYZ([transfer.from.lng, transfer.from.lat]);
-            var to = latlongToXYZ([transfer.to.lng, transfer.to.lat]);
+            var from = latlongToXYZ(transfer.from.pos);
+            var to = latlongToXYZ(transfer.to.pos);
             var normal = from.clone();
             var col = transfer.isIngoing?0x0000ff:0xff0000;
             normal.sub(to);
@@ -127,6 +127,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             geometry.vertices = merge(curve.getPoints( 20 ),curve2.getPoints(20));
             curves.push({
                 points:geometry.vertices,
+                mid:geometry.vertices[geometry.vertices.length/2],
                 strength:Math.max(1,transfer.strength*curve.getLength()/10),
                 length:curve.getLength()*2,
                 color:col
@@ -151,7 +152,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         controls = new THREE.OrbitControls(camera,container);
         controls.rotateSpeed = 0.5;
         controls.noPan = true;
-        controls.minDistance = globalScale*1.1;
+        controls.minDistance = globalScale*1.05;
         controls.maxDistance = globalScale*4;
         controls.zoomInfluencesRotateSpeed = true;
 
@@ -198,9 +199,9 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         Object.keys(teams).forEach(function(t){
             teamLocs.push({
                 name:t,
-                uid:teams[t].slug,
+                uid:teams[t].uid,
                 pos:[0,0],
-                realpos:latlongToXYZ([teams[t].lng, teams[t].lat]),
+                realpos:latlongToXYZ(teams[t].pos),
                 visible:true
             });
         });
@@ -266,7 +267,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             particles.showCurves(curves);
             initTeamLocations(overlays,transfers);
         };
-        self.showRumours = function(rumours,updListener){
+        self.showTwitterRumours = function(rumours,updListener){
             var newgroup = self.updateAll(updListener);
             var locs = [];
             rumours.forEach(function(rumour){
@@ -277,6 +278,23 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             particles = new Particles(newgroup);
             particles.showLocs(locs);
             initRumours(rumours);
+        }
+        self.showTransferRumours = function(rumours,updListener){
+            var newgroup = self.updateAll(updListener);
+            var curves = generateTransfers(newgroup,rumours);
+            particles = new Particles(newgroup);
+            particles.showCurves(curves);
+            teamLocs = [];
+            for(var i =0;i<rumours.length;i++){
+                var r = rumours[i];
+                teamLocs.push({
+                    name:r.player,
+                    pos:[0,0],
+                    rumour:r,
+                    realpos:curves[i].mid,
+                    visible:true
+                });
+            }
         }
         self.getTeamLocations = function(){
             return teamLocs;

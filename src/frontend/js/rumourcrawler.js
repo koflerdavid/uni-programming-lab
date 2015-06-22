@@ -12,15 +12,29 @@ var ourPassword = "1234";
 var app     = express();
 
 app.get('/scrape/:password', function(req, res){
-
     if(req.params.password != ourPassword){
         res.status(403).send("Access Denied")
     }
+    scrape(function(pages){
+        res.json(pages);
+        try{
+            fs.unlinkSync('../data/rumourdata.json');
+        }catch(err){
+            console.log(err);
+        }
+        pages.forEach(function(page){
+            fs.appendFileSync('../data/rumourdata.json', JSON.stringify(page)+'\n');
+        });
+        console.log('File successfully written!');
+    });
+});
+
+function scrape(clb){
 
     var baseuri = 'http://www.transfermarkt.co.uk/rumourmill/detail/forum/180/ajax/threadList';
     var pages = [];
 
-    Promise.resolve([1,2,3,4])
+    Promise.resolve([1])
     //Promise.resolve([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20])
         .each(function(page) {
             var uri = baseuri;
@@ -98,13 +112,11 @@ app.get('/scrape/:password', function(req, res){
         .then(function() {
             Promise.all(pages).then(function (pages) {
                 pages = Array.prototype.concat.apply([], pages);
-                res.json(pages);
-                fs.writeFile('../data/rumourdata.json', JSON.stringify(pages, null, 4), function(err){
-                    console.log('File successfully written!')
-                });
+                if(clb)
+                    clb(pages);
             });
         });
-});
+}
 
 var doSentimentAnalysisForNames = function (names, toTeams, probs, links) {
     console.log(names[0]);
@@ -113,14 +125,14 @@ var doSentimentAnalysisForNames = function (names, toTeams, probs, links) {
         return pSentimentAnalysis(links[i])
             .then(function (res) {
                 var score = res[0], comparative = res[1];
-                //console.log(names[i]);
+                console.log(name);
                 //console.log(toTeams[i]);
                 //console.log(probs[i]);
                 //console.log(links[i]);
                 //console.log('avg score '.concat(score));
                 //console.log('comparative '.concat(comparative));
                 //console.log("\n");
-                sleep(1000);
+                sleep(10);
                 return [name, toTeams[i], probs[i], links[i], score, comparative];
             });
     });
@@ -177,6 +189,6 @@ function sentimentAnalysis(link, callback){
         })
 }
 
-app.listen('8081');
+//app.listen('8081');
 console.log('Magic happens on port 8081');
-exports = module.exports = app;
+exports = module.exports = scrape;
