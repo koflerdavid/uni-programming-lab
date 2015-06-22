@@ -114,32 +114,63 @@
   \end{frame}
 	
 	\begin{frame}
+    \frametitle{Outline}
+		\begin{itemize}
+      \item Visualization of the football transfer graph \checkmark
+			\item Analysis and visualization of team/player statistics from the football transfer graph 
+			\item Calculation of popularity of teams using Twitter 
+			\item Inclusion and analysis of transfer rumors from different sources \checkmark
+			\item Classification and visualization of fan opinions from Twitter \checkmark
+		\end{itemize}
+  \end{frame}
+	
+	\begin{frame}
     \frametitle{Demo}
 		\begin{center}
       \includegraphics[height=6cm]{screenshot.JPG}\\
 			\end{center}
   \end{frame}
 	
-	
 	\begin{frame}
-    \frametitle{Upcoming Experiments/Evaluation}
-		\begin{itemize}
-      \item Correctness evaluation with random samples
-			\item Performance evaluation
-			\item ...
-		\end{itemize}
+    \frametitle{Evaluation}
+		\framesubtitle{Geocoder}
+		\begin{block}{Missing Locations}
+			$\rightarrow$ directly measured
+			\begin{itemize}
+      \item 1165 out of 5356 teams have no result (21.75\%)
+			\end{itemize}
+		\end{block}
+	  \begin{block}{Wrong Locations}
+			$\rightarrow$ needs manual verification
+			\begin{itemize}
+			\item Sample size: 250
+      \item 147 (58.8\%) correct
+			\item 44 (17.6\%) wrong 
+			\item 59 (23.6\%) no result
+			\end{itemize}
+    \end{block}
   \end{frame}
 	
 	\begin{frame}
-    \frametitle{Outline}
+    \frametitle{Evaluation}
+		\framesubtitle{Sentiment Analysis}
+		$\rightarrow$ needs manual verification
 		\begin{itemize}
-      \item Visualization of the football transfer graph (Fix bugs)\checkmark
+		\item
+		\end{itemize}
+  \end{frame}
+	
+	
+	\begin{frame}
+    \frametitle{Future Work}
+		\begin{itemize}
+      \item Adding missing locations and fix wrong ones
 			\item Analysis and visualization of team/player statistics from the football transfer graph
 			\item Calculation of popularity of teams using Twitter
-			\item Inclusion and analysis of transfer rumors from different sources
-			\item Classification and visualization of fan opinions from Twitter
 		\end{itemize}
   \end{frame}
+	
+	
 	
 % etc
 \end{document}

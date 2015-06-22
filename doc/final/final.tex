@@ -11,7 +11,7 @@
 
 \begin{document}
 \title{703804: Programming Lab: Innovative Interaktion,
-Visualisierung und Analyse\\ Progress Report}
+Visualisierung und Analyse\\ Final Report}
 \author{David Kofler \and David Westreicher \and Matej Stanic}
 \date{\today}
 \maketitle
@@ -85,11 +85,16 @@ We use NodeJS \cite{NodeJS} for implementing the server-side part. We tried to u
 \\ \\
 The website uses the ThreeJS library \cite{ThreeJS} to render a globe and dotted lines connecting points on its surface. This visualization will be used to render player transfers. There is also a search field with IntelliSearch, which means that it searches for possible search results while the user types. When the user selects a result then the view is narrowed to that particular result, for example only the transfers of a particular player are displayed.
 
-\subsection{Other components}
+\subsection{Sentiment Analysis}
 --- under construction ---
+
 \section{Evaluation}
 \subsection{Geocoder}
-The correctness of the geocoder module is essential for our project as wrong team locations falsify the visualization. Therefore we evaluated the geocoder regarding wrong or missing results. Missing results can be directly measured: For 1165 out of 5356 teams of the database the geocoder couldn't find a valid location, which is 21.75\% of all teams. This is due to missing ground info, and also due to the fact that the home cities cannot always be inferred from the team name (e.g. Schalke 04 is from Gelsenkirchen). On the other hand evaluating wrong locations requires manual verification. So we chose a sample size of 250, reaching a confidence level of 90\%. Out of those 250 teams, 147 (58.8\%) were labeled correctly, 44 (17.6\%) were assigned wrong and 59 (23.6\%) were missing. The main reason for wrong locations were ambiguities concerning town names. Especially English teams often had been assigned a same-named town in the USA. The same problems occurred for other English-speaking countries as Scotland, Ireland, Australia, New Zealand and Canada. All in all geocoding doesn't seem to be suitable when it comes to football teams because it requires manual verification and for 40\% of all teams the location has to be set manually.
+The correctness of the geocoder module is essential for our project as wrong team locations falsify the visualization. Therefore we evaluated the geocoder regarding wrong or missing results. Missing results can be directly measured: For 1165 out of 5356 teams of the database the geocoder couldn't find a valid location, which is 21.75\% of all teams. This is due to missing ground info, and also due to the fact that the home cities cannot always be inferred from the team name (e.g. Schalke 04 is from Gelsenkirchen). 
+\\ \\
+On the other hand evaluating wrong locations requires manual verification. So we chose a sample size of 250, reaching a confidence level of 90\%. Out of those 250 teams, 147 (58.8\%) were labeled correctly, 44 (17.6\%) were assigned wrong and 59 (23.6\%) were missing. The main reason for wrong locations were ambiguities concerning town names. Especially English teams often had been assigned a same-named town in the USA. The same problems occurred for other English-speaking countries as Scotland, Ireland, Australia, New Zealand and Canada. All in all geocoding doesn't seem to be suitable when it comes to football teams because it requires manual verification and for 40\% of all teams the location has to be set manually.
+
+
 \subsection{Sentiment Analysis}
 
 \section{Conclusion}
