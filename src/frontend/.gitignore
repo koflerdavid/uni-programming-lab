@@ -3,3 +3,5 @@ bower_components/*
 js/gui.js
 js/.module-cache/*
 setenv.sh
+.idea/
+setenvreal.sh

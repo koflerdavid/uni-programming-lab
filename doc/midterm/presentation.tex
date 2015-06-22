@@ -1,0 +1,137 @@
+\documentclass{beamer}
+\usetheme{Warsaw} 
+
+
+\title[Soccervis] % (optional, only for long titles)
+{Soccervis - Visualizing Football Transfers}
+\subtitle{Midterm Presentation}
+\author[Kofler, Stanic, Westreicher] % (optional, for multiple authors)
+{David~Kofler \and Matej~Stanic \and David~Westreicher}
+
+\begin{document}
+\frame{\titlepage}
+
+
+  \begin{frame}
+    \frametitle{Introduction}
+		Facts:
+		\begin{itemize}
+			\item Over 10000 football transfers per year
+			\item Billion dollar market 
+		\end{itemize}
+		Our goal: 
+		\begin{itemize}
+			\item Gather data
+			\item Analyze
+			\item Visualize
+		\end{itemize}
+		$\rightarrow$ New insights for football fans
+  \end{frame}
+	
+  \begin{frame}
+    \frametitle{Approaches}
+		\framesubtitle{Crawler}
+		\textbf{Crawler} \\ 
+		$\rightarrow$ Crawling data from www.soccerbase.com
+		\begin{columns}[T] % contents are top vertically aligned
+    \begin{column}[T]{5cm} % each column can also be its own environment
+			\begin{center}
+      \includegraphics[height=3cm]{java8.jpg}\\
+			Java 8
+			\end{center}
+    \end{column}
+    \begin{column}[T]{5cm} % alternative top-align that's better for graphics
+		\begin{center}
+		 \includegraphics[height=3cm]{html.png} \\ 
+			JSoup HTML parser (www.jsoup.org)
+		\end{center}	
+    \end{column}
+    \end{columns}   
+  \end{frame}
+	
+	 \begin{frame}
+    \frametitle{Approaches}
+		\framesubtitle{Geocoder}
+		\textbf{Geocoder} \\
+		$\rightarrow$ Find exact coordinates of the team's home grounds
+    \begin{columns}[T] % contents are top vertically aligned
+     \begin{column}[T]{5cm} % each column can also be its own environment
+			\begin{center}
+     \includegraphics[height=3cm]{python.jpg}\\
+			Python 2
+			\end{center}
+     \end{column}
+     \begin{column}[T]{5cm} % alternative top-align that's better for graphics
+		\begin{center}
+		 \includegraphics[height=3cm]{opencage.png} \\
+			OpenCage Geocoding API
+			\end{center}
+     \end{column}
+     \end{columns}
+  \end{frame}
+	
+	 \begin{frame}
+    \frametitle{Approaches}
+		\framesubtitle{Website}
+		\textbf{Website} \\
+		$\rightarrow$ Visualize Data
+    \begin{columns}[T] % contents are top vertically aligned
+     \begin{column}[T]{5cm} % each column can also be its own environment
+			\begin{center}
+     \includegraphics[height=3cm]{nodejs.jpg}\\
+			Node.js - Server-side platform
+			\end{center}
+     \end{column}
+     \begin{column}[T]{5cm} % alternative top-align that's better for graphics
+		\begin{center}
+		 \includegraphics[height=3cm]{threejs.jpg} \\
+			Three.js - Javascript 3D library
+			\end{center}
+     \end{column}
+     \end{columns}
+  \end{frame}
+	
+	\begin{frame}
+		\frametitle{Approaches}
+		\framesubtitle{Database}
+		\textbf{Database} \\ 
+			\begin{center}
+      \includegraphics[height=2cm]{neo4j.png}\\
+			Neo4j Graph Database
+			\end{center}
+  \end{frame}
+	
+	\begin{frame}
+    \frametitle{Data}
+		\begin{itemize}
+      \item Data crawled from www.soccerbase.com
+			\item Contains 100 leagues, 3000 teams, 100000 players, 300000 transfers
+			\item For testing purposes: Small database \\
+						$\rightarrow$ 7 teams, 200 players, 800 transfers \\
+						$\rightarrow$ Size: 4 MB
+			\item Database needs to be updated only when the transfer windows are open (Jan-Feb and Jun-Aug)
+		\end{itemize}
+  \end{frame}
+	
+	\begin{frame}
+    \frametitle{Demo}
+  \end{frame}
+	
+	
+	\begin{frame}
+    \frametitle{Upcoming Experiments/Evaluation}
+  \end{frame}
+	
+	\begin{frame}
+    \frametitle{Outline}
+		\begin{itemize}
+      \item Visualization of the football transfer graph \checkmark
+			\item Analysis and visualization of team/player statistics from the football transfer graph
+			\item Calculation of popularity of teams using Twitter
+			\item Inclusion and analysis of transfer rumors from different sources
+			\item Classification and visualization of fan opinions from Twitter
+		\end{itemize}
+  \end{frame}
+	
+% etc
+\end{document}

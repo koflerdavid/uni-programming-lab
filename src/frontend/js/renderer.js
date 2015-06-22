@@ -109,8 +109,8 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         var curves = [];
         for(var i=0;i<transfers.length;i++){
             var transfer = transfers[i];
-            var from = latlongToXYZ(transfer.from.pos);
-            var to = latlongToXYZ(transfer.to.pos);
+            var from = latlongToXYZ([transfer.from.lng, transfer.from.lat]);
+            var to = latlongToXYZ([transfer.to.lng, transfer.to.lat]);
             var normal = from.clone();
             var col = transfer.isIngoing?0x0000ff:0xff0000;
             normal.sub(to);
@@ -198,9 +198,9 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         Object.keys(teams).forEach(function(t){
             teamLocs.push({
                 name:t,
-                uid:teams[t].uid,
+                uid:teams[t].slug,
                 pos:[0,0],
-                realpos:latlongToXYZ(teams[t].pos),
+                realpos:latlongToXYZ([teams[t].lng, teams[t].lat]),
                 visible:true
             });
         });

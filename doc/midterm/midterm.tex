@@ -1,0 +1,96 @@
+\documentclass{article}
+% Include required packages
+\usepackage{listings}
+\usepackage{natbib}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{footnote}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} 
+
+\begin{document}
+\title{703804: Programming Lab: Innovative Interaktion,
+Visualisierung und Analyse\\ Progress Report}
+\author{David Kofler \and David Westreicher \and Matej Stanic}
+\date{\today}
+\maketitle
+
+\section{Motivation}
+Over the past decades football has become the world's most popular sport with over 250 million players in 200 countries. Including over 3 billion fans worldwide, it has also become a multi-million dollar business. One of the main income sources of football clubs are transfers. Huge amounts of money are spent for transfer fees. For football fans the transfer circus is always of big interest, but with approximately 12000 transfers per year it is difficult to keep track of every single transfer. Also, football fans are interested in transfer rumors and statistics. This is the starting point of our project. Basically, the goal of the project is to visualize data concerning football transfers including twitter data, which is interesting for football fans.
+
+\section{Problem Definition}
+The single components of the project can be summarized as following:
+\begin{itemize}
+	\item \textbf{Visualization of the football transfer graph.} Using data from \url{www.soccerbase.com} the goal is to construct a graph of player transfers between clubs. Intuitively, the graph is a directed graph, where the nodes are the teams and the edges have the players and the transfer fees as attributes. Our visualization idea builds up upon the graph from \url{www.transferwindow.info}. Initially, the graph is visualized in a geographical world map. The user then can click on a league/team/player to show only transfers of the league/team/player. Also, clicking on one of those three would provide additional statistics. Furthermore, an extended filter can be applied, e.g to show only transfers of players which are under 21, or players which are from Spain.
+	
+	\item \textbf{Analysis and visualization of team/player statistics from the football transfer graph.} The transfer graph can be used to analyze certain behaviors of players and teams using graph analysis algorithms. For example, depth search can be used to find players which left a team and then came back after some years. Or, using the \emph{PageRank} algorithm\footnote{\url{http://en.wikipedia.org/wiki/PageRank}}, teams can be found which are of high importance when it comes to transfers. \cite{brath} give an overview of graph algorithms, that are also interesting for this project.
+	
+	\item \textbf{Calculation of popularity of teams using twitter.} Each football team has an official twitter account where they post news, events, etc. When clicking on a team in the football transfer graph, statistics of their twitter account would be presented, including the number of followers. Unfortunately, the number of followers doesn't reflect the true number of fans. \cite{Ramasamy:2013:IUI:2512938.2512960} propose a method to identify user interests from tweet times, which are compared to the tweet times of events concerning the team. This algorithm can therefore identify true fans.
+	
+	\item \textbf{Inclusion and analysis of transfer rumors from different sources.} Using twitter and/or news sites we will include transfer rumors. \cite{Kunneman+12} have used different machine learning methods to find tweets that refer to scheduled or unscheduled events like transfer rumors. We can directly use their approach in our project, but for unscheduled events the performance is poor.
+	
+	\item \textbf{Classification and visualization of fan opinions from twitter.} The project will also include user opinions about transfers. \cite{Shrivatava2014} have proposed a model for classifying user tweets as positive, negative or neutral using Support Vector Machines. This model can also be applied to transfer opinions.
+\end{itemize}
+
+All in all the project should offer football fans a whole new level of transfer investigation. The inclusion and analysis of twitter data combined with a intuitive visualization is the key innovation compared to other projects.
+
+\section{Survey}
+This section gives an more detailed survey of the single sources of the project. Every group member has chosen at least three sources.
+\subsection{David Kofler}
+
+\begin{itemize}
+	\item \cite{Cattuto:2013:TSN:2484425.2484442} use Neo4J to store data about social interactions which was collected during a conference by using wearable proximity sensors. They present some example queries and discover that querying over densely-connected nodes makes it difficult to achieve high performance. This is something we have to keep in mind when we create our data model.
+
+	\item \cite{Jarukasemratana:2013:CDA:2481492.2481527} contains an interesting algorithm to find communities of clubs between which players often circulate. Many important real-world networks have the scale-free property (we assume that the football transfer network too), but detecting communities within them is not always easy because subcommunities tend to be classified as communities on their own. This paper presents an algorithm specialized for scale-free networks.
+
+	\item \verb+D3.js+ (\url{http://d3js.org}) is a JavaScript framework to create animations on webpages. It is similar in usage to other popular JavaScript libraries (like jQuery and Prototype), but contains special features to create animations. We will use it to create our visualizations.
+\end{itemize}
+
+\subsection{David Westreicher}
+\begin{itemize}
+    \item \url{http://eyeseedata.com/football-player-transfers/} is a blogpost describing the visualization of global football transfers. It contains a video which shows a map of the world in which every transfer is shown as a edge between two countries. The video progresses through the years 1900 to 2013. Then there is also a interactive map where you can click on a country and see the ingoing and outgoing transfers of the selected country. The last interactive part is a statistic of the number of transfers and their fees, grouped by countries. These visualizations give a good idea of how such a map would look, but the difference to our project is that we don't group transfers to countries but to clubs and we will combine the transfers with social data.
+    \item \url{www.transferwindow.info} is a interactive visualization of football transfers of popular leagues. The main idea here is to represent the transfers by a graph between leagues or teams. On the right side of the site there is also information of the top transfers in the currently selected view. The site is visually appealing and gives a good glimpse of how a beautiful style for graphs is achieved. Our project will however lay out the graph on top of a world map.
+    \item \cite{Ramasamy:2013:IUI:2512938.2512960} is a interesting paper about extracting interests from twitter users solely by the time they write their tweets. The idea is to connect the time of the tweets to the time of external events. We could use such an approach to find out if a user is a fan of a certain team. For example if team A currently has a match with team B and the user T tweets while they are playing. Then the user T is likely a fan of A or B.
+
+\end{itemize}
+
+\subsection{Matej Stanic}
+\begin{itemize}
+	\item \url{www.soccerbase.com} is a football news site that not only contains news but also many statistics about leagues, teams and players. This includes also a detailed transfer history for every team and player. It's a site where football fans can keep up to date. For our project, detailed transfer information is inevitable in order to build a correct graph of transfers. Soccerbase.com offers exactly that type of transfer data that is needed to build such a graph. By scraping we can directly get the data that we need.
+	\item \cite{Shrivatava2014} have evaluated a method for sentiment analysis for Twitter posts. They implemented a crawler to obtain twitter posts, which then where classified as positive, neutral or negative using a standard Support Vector Machine (SVM). The SVM was evaluated on a predefined dataset using cross validation. The average accuracy of their method was 70.592\%. For our project, the same approach can be used for transfers and/or transfer rumors. After extracting football fan opinions on transfers from Twitter they could be classified as positive, negative or neutral. This would somehow be a measure of acceptance between the fans and the owners and managers of the club. There may be one problem, which is assigning tweets to transfers. This could be solved by only taking into account tweets which are referencing the transfer tweet.
+	\item \cite{Kunneman+12} evaluate methods which identify tweets referring to scheduled or unscheduled events. Their case study consists of two scenarios: The first one are football matches which are scheduled. On the other hand they also used an unscheduled scenario, football transfers. They have tested several state-of-the-art machine learning methods for their scenarios. The results are twofold: For the scheduled event scenario, the accuracy for some methods was above 80\% while for the unscheduled scenario the accuracy was near-baseline. This means that even though the machine learning methods can directly be used for our project, it would not be productive because of the poor performance. 
+\end{itemize}
+\section{Proposed Method}
+
+Our solution so far consists of three parts: the crawler, the geocoder and the website. The crawler is responsible for collecting the data and storing it into the database. The geocoder researches where the home ground of each team is, and adds that information to the database. The website finally renders the data on a 3D globe.
+
+\subsection{Crawler}
+
+The crawler which pulls the data from the website is written in Java. It uses the \verb+jsoup+ library \cite{jsoup} to fetch HTML websites and to parse them. CSS Selectors can then be used to extract the content from the HTML DOM tree. By using Dependency Injection and the Observer model the crawlers for the entities Team, Player and Tournament can be composed, which eases testing the components a lot. Also, since there is no monolithic component which does everything, the crawlers can be used independently from each other, for example to update the data of only a particular entity. 
+\\ \\
+Implementing the crawler was a bit tricky because not every web page contains all the data. Also, it was not obvious how to store various data, for example the transfers. The web page only contains the contracts a player has with clubs. The transfers have to be calculated, which is  still on our To Do-list because there are overlaps in the contract periods. 
+\\ \\
+The crawler takes a lot of time to run since there should be a short time delay (at least 10 seconds) between each access to the website, else the website administrator might take measures against a perceived attack.
+\\ \\
+The space needed to store all the data is vanishingly small (a few MB). The largest amount of it is data about the players and their career history. Neo4j is well-suited to our data model and is easy to use. 
+
+\subsection{Geocoder}
+
+The Geocoder is a Python script and uses the \verb+py2neo+ library to access the database. It then uses the OpenCage geocoder \cite{OpenCage} to look up the coordinates of each team's home ground and to store that information in the database. Since there were a few bugs in the OpenCage geocoder bindings for Python the script has to use Python's built-in \verb+urllib+ library to access the web service.
+
+\subsection{Website}
+
+We use NodeJS \cite{NodeJS} for implementing the server-side part. We tried to use Java web frameworks, but compared with NodeJS they are very complicated to set up and work with. Also, nowadays it is easier to find webhosting providers for NodeJS than for Java web applications.
+\\ \\
+The website uses the ThreeJS library \cite{ThreeJS} to render a globe and dotted lines connecting points on its surface. This visualization will be used to render player transfers. There is also a search field with IntelliSearch, which means that it searches for possible search results while the user types. When the user selects a result then the view is narrowed to that particular result, for example only the transfers of a particular player are displayed.
+
+\subsection{Other components}
+--- under construction ---
+\section{Evaluation}
+--- under construction ---
+\section{Conclusion}
+--- under construction ---
+\bibliographystyle{plain}
+\bibliography{refs}
+\end{document}

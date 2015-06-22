@@ -1,40 +1,52 @@
 var IntelliSearch = React.createClass({
     newtimeout: function(fun){
-        if(this.timeout!=null)
+        if(this.timeout != null) {
             clearTimeout(this.timeout);
+        }
+
         this.timeout = setTimeout(fun,1000);
     },
     onSelect: function(e){
         this.setState(this.getInitialState());
         this.props.onSelect(e);
     },
+
     render: function(){
-        var style ={
+        var style = {
             pointerEvents:'auto',
             minHeight:this.state.showLoading?'9rem':'4rem'
-        }
+        };
+
         return (
             <div style={style}>
                 <SearchBar onTextChange={this.onTextChange} startText={this.state.startText}/>
-                <LoadingBar showLoading ={this.state.showLoading}/>
+                <LoadingBar showLoading={this.state.showLoading}/>
                 <SearchResult result={this.state.result} onSelect={this.onSelect} visible={this.state.startText!=''}/>
             </div>
-            );
+        );
     },
-    onTextChange: function(text){ var self = this;
-        if(!self.isMounted())
+
+    onTextChange: function(text){
+        var self = this;
+
+        if(!self.isMounted()) {
             return;
-        if(text==''){
-            if(self.timeout!=null)
+        }
+
+        if(text == '') {
+            if(self.timeout != null) {
                 clearTimeout(self.timeout);
+            }
+
             self.setState({startText:'',showLoading:false});
             return;
         }
+
         var state = self.getInitialState();
         state.showLoading = true;
         self.setState(state);
         this.newtimeout(function(){
-            $.getJSON('/search?text='+text, function(result){
+            $.getJSON('/search', {text: text}, function(result){
                 self.setState({showLoading:false});
                 if(self.isMounted()){
                     self.setState({result:result,startText:text});
@@ -42,18 +54,20 @@ var IntelliSearch = React.createClass({
             });
         });
     },
+
     getInitialState: function(){
         return {
             result:{
                 Tournaments:[],
                 Players:[],
-                Teams:[],
+                Teams:[]
             },
             startText:'',
             showLoading:false
         };
     }
 });
+
 var LoadingBar = React.createClass({
     render: function(){
         if(this.props.showLoading)
@@ -61,21 +75,26 @@ var LoadingBar = React.createClass({
         return <div/>
     }
 });
+
 var SearchBar = React.createClass({
     handleChange: function(){
         this.props.onTextChange(this.refs.searchText.getDOMNode().value);
     },
+
     render: function(){
         return (<input type='text' placeholder='Search...' ref='searchText' onChange={this.handleChange} className='form-control'/>);
     }
 });
+
 var SearchResult = React.createClass({
     render: function(){
-        if(!this.props.visible)
-            return null
+        if(!this.props.visible) {
+            return null;
+        }
+
         var rows = [];
-        var lastCategory = null;
         var self = this;
+
         Object.keys(this.props.result).forEach(function(category){
             var results = this[category];
             if(results && results.length > 0){
@@ -86,14 +105,16 @@ var SearchResult = React.createClass({
                 });
                 rows.push(<Divider key={category+"div"}/>);
             }
-        },this.props.result);
+        }, this.props.result);
+
         return (
             <ul className='dropdown-menu scrollable-menu'>
                 {rows}
             </ul>
-            );
+        );
     }
 });
+
 var Divider = React.createClass({
     render: function(){
         return (
@@ -101,12 +122,14 @@ var Divider = React.createClass({
         );
     }
 });
+
 var ResultCategory = React.createClass({
     staticLABELS: {
         Players:'info',
         Tournaments:'success',
-        Teams:'danger',
+        Teams:'danger'
     },
+
     render: function(){
         var className = 'label label-'+this.staticLABELS[this.props.category]
         return (
@@ -116,79 +139,95 @@ var ResultCategory = React.createClass({
         );
     }
 });
+
 var Result = React.createClass({
     handleClick: function(){
         this.props.onSelect(this.props.entry);
     },
+
     render: function(){
         var style = {
             cursor:'pointer'
-        }
+        };
+
         return (<li style={style}><a onClick={this.handleClick}>{this.props.entry.name}</a></li>);
     }
 });
+
 var DetailRow = React.createClass({
     render: function(){
         return (
-        <li className='list-group-item'>
-            {this.props.name}
-            <h4 className='list-group-item-heading'>{this.props.data}</h4>
-        </li>
-        )
+            <li className='list-group-item'>
+                {this.props.name}
+                <h4 className='list-group-item-heading'>{this.props.data}</h4>
+            </li>
+        );
     }
 });
+
 var SelectableRow = React.createClass({
     handleClick: function(){
         this.props.onSelected(this.props.entity);
     },
+
     render: function(){
         var style = {
             cursor:'pointer'
-        }
+        };
+
         return (
             <li style={style} className='list-group-item' onClick={this.handleClick}>{this.props.name}</li>
         )
     }
 });
+
 var RowList = React.createClass({
     render: function(){
         var self = this;
         var rows = [];
-        var entities = this.props.entities;
-        entities.forEach(function(entity){
-            entity.type=self.props.type;
+
+        this.props.entities.forEach(function(entity){
+            entity.type = self.props.type;
             rows.push(<SelectableRow entity={entity} name={entity.name} onSelected={self.props.onSelected} key={entity.uid}/>);
         });
+
         return (
-        <li className='list-group-item'>
-            {this.props.type}
-            <ul className='list-group list-group-transparent'>
-                {rows}
-            </ul>
-        </li>
-        )
+            <li className='list-group-item'>
+                {this.props.type}
+                <ul className='list-group list-group-transparent'>
+                    {rows}
+                </ul>
+            </li>
+        );
     }
 });
+
 var DetailView = React.createClass({
     staticLABELS: {
         Players:'info',
         Tournaments:'success',
-        Teams:'danger',
+        Teams:'danger'
     },
+
     addRow:function(rows,name,data){
-        if(data && data.length>0)
+        if(data && data.length>0) {
             rows.push(<DetailRow name={name} data={data} key={name}/>);
+        }
     },
+
     handleExit: function(){
         this.props.onSelected(null);
     },
+
     render: function(){
         var self = this;
         var selected = this.props.selected;
-        if(!selected || this.props.hidden)
-            return null
-        var name = selected.name;
+        if(!selected || this.props.hidden) {
+            return null;
+        }
+
         var rows = [];
+
         switch(selected.type){
             case 'Players':
                 this.addRow(rows,'Name',selected.name);
@@ -206,15 +245,19 @@ var DetailView = React.createClass({
                     rows.push(<RowList entities={teams} type="Teams" onSelected={this.props.onSelected} key={'teams'}/>);
                 }
                 break;
+
             case 'Teams':
                 this.addRow(rows,'Name',selected.name);
+
                 if(selected.details)
                     Object.keys(selected.details).forEach(function(detailkey){
                         self.addRow(rows,detailkey,selected.details[detailkey]);
                     });
+
                 if(selected.players&&selected.players.length>0)
                     rows.push(<RowList entities={selected.players} type="Players" onSelected={this.props.onSelected} key={'players'}/>);
                 break;
+
             case 'Tournaments':
                 this.addRow(rows,'Name',selected.name);
                 this.addRow(rows,'Date',selected.date);
@@ -222,10 +265,12 @@ var DetailView = React.createClass({
                     rows.push(<RowList entities={selected.teams} type="Teams" onSelected={this.props.onSelected}/>);
                 break;
         }
+
         var style = {
             overflow:'auto',
             pointerEvents:'auto'
-        }
+        };
+
         return (
             <div className={"panel panel-"+this.staticLABELS[selected.type]+" panel-transparent"} style={style}>
                 <div className="panel-heading">
@@ -238,9 +283,10 @@ var DetailView = React.createClass({
                     {rows}
                 </ul>
             </div>
-            )
+        );
     }
 });
+
 var TwitterDetail = React.createClass({
     render: function(){
         var self = this;
@@ -273,64 +319,74 @@ var TwitterDetail = React.createClass({
         )
     }
 });
+
 var App = React.createClass({
     staticURL: {
         Players:'player',
         Tournaments:'tournament',
-        Teams:'team',
+        Teams:'team'
     },
+
     componentDidMount: function(){
         window.globe.setOnSelect(this.onSelect);
         $('#rumourcheckbox').change(this.onRumourChange);
         this.rumours = [];
     },
-    render: function(){
-        var style ={
-            position:'absolute',
-            right:'0px',
-            width:'20%',
-            zIndex:1001,
-            display:'flex',
-            flexDirection:'column',
-            height:'100%',
-            paddingTop:'2rem',
-            paddingRight:'2rem',
-            pointerEvents:'none'
-        }
-        var style2 ={
-            flex:'1',
-        }
-        var style3 ={
-            position:'absolute',
-            paddingTop:'2rem',
-            paddingLeft:'2rem',
-            zIndex:1002,
-        }
+
+    render: function() {
+        var style = {
+            position: 'absolute',
+            right: '0px',
+            width: '20%',
+            zIndex: 1001,
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            paddingTop: '2rem',
+            paddingRight: '2rem',
+            pointerEvents: 'none'
+        };
+
+        var style2 = {
+            flex: '1'
+        };
+
+        var style3 = {
+            position: 'absolute',
+            paddingTop: '2rem',
+            paddingLeft: '2rem',
+            zIndex: 1002
+        };
+
         var details = null;
-        if (this.state.showRumour)
+        if (this.state.showRumour) {
             details = (<div style={style}>
-                            <TwitterDetail selected={this.state.selected}/>
-                       </div>)
-        else
+                <TwitterDetail selected={this.state.selected}/>
+            </div>)
+        } else {
             details = (<div style={style}>
-                            <IntelliSearch onSelect={this.onSelect} />
-                            <DetailView selected={this.state.selected} onSelected={this.onSelect} />
-                            <div style={style2}></div>
-                       </div>)
+                <IntelliSearch onSelect={this.onSelect} />
+                <DetailView selected={this.state.selected} onSelected={this.onSelect} />
+                <div style={style2}></div>
+            </div>);
+        }
+
         return (
-        <div>
-            <div style={style3}>
-                <input type="checkbox" id='rumourcheckbox' defaultChecked={this.state.showRumour} data-toggle="toggle" data-on="Rumours" data-off="Search"/>
+            <div>
+                <div style={style3}>
+                    <input type="checkbox" id='rumourcheckbox' defaultChecked={this.state.showRumour} data-toggle="toggle" data-on="Rumours" data-off="Search"/>
+                </div>
+                {details}
             </div>
-            {details}
-        </div>
-        )
+        );
     },
+
     onRumourChange: function(e){
         window.globe.clear();
         var self = this;
         var newstate = !this.state.showRumour
         self.setState({selected:null,showRumour:newstate});
+
         if(newstate){
             $.getJSON('/rumours/', function(result){
                 self.rumours = result;
@@ -339,14 +395,18 @@ var App = React.createClass({
             });
         }
     },
+
     onSelect: function(e){
         var self = this;
         if(!e){
-            if(self.isMounted())
+            if(self.isMounted()) {
                 self.setState(this.getInitialState());
+            }
+
             window.globe.clear();
-            return
+            return;
         }
+
         if(this.state.showRumour){
             var rumourfiltered = [];
             var name = "";
@@ -358,34 +418,56 @@ var App = React.createClass({
                     }
                 })
             });
+
             this.setState({selected:{rumours:rumourfiltered,teamname:name}});
             return;
         }
+
         $.getJSON("/"+this.staticURL[e.type]+'/'+e.uid, function(result){
             result.type = e.type;
             if(self.isMounted()){
                 var transfers = [];
                 var overlays = [];
                 console.log(result);
+
                 switch(e.type){
                     case 'Tournaments':
                         break;
+
                     case 'Teams':
-                        if(result.pos.length==2)
-                            overlays.push({name:result.name,uid:e.uid,pos:result.pos});
-                        transfers=result.transfers?result.transfers:[];
+                        if(result.pos.length == 2) {
+                            overlays.push({name: result.name, uid: e.uid, pos: result.pos});
+                        }
+
+                        transfers = result.transfers ? result.transfers: [];
+                        transfers.forEach(function (transfer) {
+                            if (!transfer.hasOwnProperty('from')) {
+                                transfer.from = e;
+                            }
+
+                            if (!transfer.hasOwnProperty('to')) {
+                                transfer.to = e;
+                                console.log('Hi');
+                            }
+                        });
+
                         break;
+
                     case 'Players':
-                        if(result.team)
-                            overlays.push({name:result.team.name,uid:result.team.uid,pos:result.team.loc});
-                        transfers=result.transfers?result.transfers:[];
+                        if(result.team) {
+                            overlays.push({name: result.team.name, uid: result.team.uid, pos: result.team.loc});
+                        }
+
+                        transfers = result.transfers ? result.transfers: [];
                         break;
                 }
-                window.globe.updateTransfers(overlays,transfers);
+
+                window.globe.updateTransfers(overlays, transfers);
                 self.setState({selected:result});
             }
         });
     },
+
     getInitialState: function(){
         return {selected:null,showRumour:false}
     }

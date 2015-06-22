@@ -1,40 +1,49 @@
 package crawler;
 
+import model.Contract;
 import model.Player;
 import model.Team;
 import model.Tournament;
 import org.neo4j.graphdb.*;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
-import org.neo4j.graphdb.schema.ConstraintDefinition;
-import org.neo4j.graphdb.schema.ConstraintType;
+import org.neo4j.helpers.collection.IteratorUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Neo4jInserter {
-    private GraphDatabaseService graphDb;
+    private static Logger LOGGER = LoggerFactory.getLogger(Neo4jInserter.class);
 
-    public static enum SoccerRelationshipTypes implements RelationshipType {
-        IN_TOURNAMENT, CURRENT_TEAM
-    }
+    private GraphDatabaseService graphDb;
 
     public Neo4jInserter(GraphDatabaseService graphDb) {
         this.graphDb = graphDb;
     }
 
     public Node createPlayer(Player player) {
-        HashMap<String, Object> parameters = new HashMap<>(8);
+        HashMap<String, Object> parameters = new HashMap<>(9);
+        parameters.put("uri", player.getUri().toString());
         parameters.put("name", player.getName());
+
+        final String id = player.getUri().getQuery().split("=")[1];
+        final String slug = Slugifier.generateSlug(Arrays.asList(player.getName(), player.getNationality(), player.getBirthday(), id));
+        parameters.put("slug", slug);
+
         parameters.put("age", player.getAge());
-        parameters.put("uri", player.getUri());
         parameters.put("birthday", player.getBirthday());
         parameters.put("birthplace", player.getBirthplace());
         parameters.put("height", player.getHeight());
         parameters.put("weight", player.getWeight());
         parameters.put("nationality", player.getNationality());
 
+        LOGGER.debug("Create player {} (at {})", player.getName(), player.getUri());
+
         Node nPlayer = (Node) graphDb
                 .execute("MERGE (player : Player { uri: {uri} })" +
-                        " SET player.name = {name}, player.age = {age}, player.birthday = {birthday}," +
+                        " SET player.name = {name}, player.slug = {slug}, player.age = {age}, player.birthday = {birthday}," +
                         "  player.birthplace = {birthplace}, player.height = {height}, player.weight = {weight}," +
                         "  player.nationality = {nationality}" +
                         " RETURN player", parameters)
@@ -44,9 +53,14 @@ public class Neo4jInserter {
     }
 
     public Node createTeam(Team team) {
-        HashMap<String, Object> parameters = new HashMap<>(12);
-        parameters.put("uri", team.getUri());
+        HashMap<String, Object> parameters = new HashMap<>(13);
+        parameters.put("uri", team.getUri().toString());
         parameters.put("name", team.getName());
+
+        final String id = team.getUri().getQuery().split("=")[1];
+        final String slug = Slugifier.generateSlug(Arrays.asList(team.getName(), Integer.toString(team.getYearFormed()), id));
+        parameters.put("slug", slug);
+
         parameters.put("nickname", team.getNickname());
         parameters.put("website", team.getWebsite());
         parameters.put("yearFormed", team.getYearFormed());
@@ -58,9 +72,11 @@ public class Neo4jInserter {
         parameters.put("ground", team.getGround());
         parameters.put("trainer", team.getTrainer() != null ? team.getTrainer().getName() : null);
 
+        LOGGER.debug("Create team {} (at: {})", team.getName(), team.getUri());
+
         Node nTeam = (Node) graphDb
                 .execute("MERGE (team : Team { uri: {uri} })" +
-                        " SET team.name = {name}, team.nickname = {nickname}, team.website = {website}," +
+                        " SET team.name = {name}, team.slug = {slug}, team.nickname = {nickname}, team.website = {website}," +
                         "  team.yearFormed = {yearFormed}, team.address1 = {address1}, team.address1 = {address1}," +
                         "  team.address2 = {address2}, team.address3 = {address3}, team.postcode = {postcode}," +
                         "  team.chairman = {chairman}, team.ground = {ground}, team.trainer = {trainer}" +
@@ -71,15 +87,20 @@ public class Neo4jInserter {
     }
 
     public Node createTournament(Tournament tournament) {
-        HashMap<String, Object> parameters = new HashMap<>(3);
+        HashMap<String, Object> parameters = new HashMap<>(4);
 
+        parameters.put("uri", tournament.getUri().toString());
         parameters.put("name", tournament.getName());
-        parameters.put("uri", tournament.getUri());
+
+        final String slug = Slugifier.generateSlug(Arrays.asList(tournament.getName(), tournament.getCountry()));
+        parameters.put("slug", slug);
         parameters.put("country", tournament.getCountry());
+
+        LOGGER.debug("Create tournament {} (at: {})", tournament.getName(), tournament.getUri());
 
         Node nTournament = (Node) graphDb
                 .execute("MERGE (tournament : Tournament { uri: {uri} })" +
-                        " SET tournament.name = {name}, tournament.country = {country}" +
+                        " SET tournament.name = {name}, tournament.slug = {slug}, tournament.country = {country}" +
                         " RETURN tournament", parameters)
                 .columnAs("tournament").next();
 
@@ -92,98 +113,142 @@ public class Neo4jInserter {
         parameters.put("tournamentUri", tournament.getUri());
         parameters.put("teamUri", team.getUri());
 
-        return (Relationship) graphDb
+        ResourceIterator<Relationship> results = graphDb
                 .execute("MERGE (team:Team { uri: {teamUri} })" +
                         "  ON CREATE SET team.name = {teamName}" +
                         " MERGE (tournament:Tournament { uri: {tournamentUri} })" +
                         "  ON CREATE SET tournament.name = {tournamentName}" +
-                        " MERGE (team)-[participation:" + SoccerRelationshipTypes.IN_TOURNAMENT + "]->(tournament)" +
+                        " MERGE (team)-[participation:" + Neo4jHelper.SoccerRelationshipTypes.IN_TOURNAMENT + "]->(tournament)" +
                         " RETURN participation", parameters)
-                .columnAs("participation").next();
+                .columnAs("participation");
+
+        return IteratorUtil.singleOrNull(results);
     }
 
     public Relationship addPlayerToTeam(Team team, Player player) {
         HashMap<String, Object> parameters = new HashMap<>(6);
 
-        parameters.put("teamUri", team.getUri());
-        parameters.put("playerUri", player.getUri());
+        parameters.put("teamUri", team.getUri().toString());
+        parameters.put("playerUri", player.getUri().toString());
+
         parameters.put("contractSigned", player.getDateSigned());
         parameters.put("position", player.getPosition());
         parameters.put("fee", player.getFee());
         parameters.put("number", player.getNumber());
 
-        return (Relationship) graphDb
+        ResourceIterator<Relationship> results = graphDb
                 .execute("MATCH (team:Team), (player:Player)" +
                         "  WHERE team.uri = {teamUri} AND player.uri = {playerUri}" +
-                        " MERGE (team)-[membership:" + SoccerRelationshipTypes.CURRENT_TEAM + "]-(player)" +
+                        " MERGE (team)-[membership:" + Neo4jHelper.SoccerRelationshipTypes.CURRENT_TEAM + "]-(player)" +
                         "  SET membership.contractSigned = {contractSigned}, membership.fee = {fee}," +
                         "   membership.number = {number}, membership.position = {position}" +
                         " RETURN membership", parameters)
-                .columnAs("membership").next();
+                .columnAs("membership");
+
+        return IteratorUtil.singleOrNull(results);
     }
 
-    public static void createSchema(GraphDatabaseService graphDb) {
+    public List<Relationship> addPlayerContracts(Player player) {
+        HashMap<String, Object> parameters = new HashMap<>(5);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        ArrayList<Relationship> contracts = new ArrayList<>(player.getContracts().size());
+
+        parameters.put("playerUri", player.getUri().toString());
+
         try (Transaction tx = graphDb.beginTx()) {
-            // Add a constraint for uniqueness of "uri" on each label
-            for (String labelName : Arrays.asList("Player", "Team", "Tournament", "Trainer")) {
-                Label label = DynamicLabel.label(labelName);
-                boolean uniqueConstraintOnUri = false;
+            for (Contract contract : player.getContracts()) {
+                parameters.put("teamUri", contract.getTeam().getUri().toString());
 
-                for (ConstraintDefinition definition : graphDb.schema().getConstraints(label)) {
-                    if (definition.isConstraintType(ConstraintType.UNIQUENESS)) {
-                        if (definition.getPropertyKeys().spliterator().getExactSizeIfKnown() == 1
-                                && "uri".equals(definition.getPropertyKeys().iterator().next())) {
-                            uniqueConstraintOnUri = true;
-                            break;
-                        }
-                    }
-                }
+                parameters.put("fee", contract.getFee());
+                parameters.put("from", contract.getFrom() != null ? dateFormat.format(contract.getFrom()) : null);
+                parameters.put("to", contract.getTo() != null ? dateFormat.format(contract.getTo()) : null);
 
-                if (!uniqueConstraintOnUri) {
-                    graphDb.schema()
-                            .constraintFor(label)
-                            .assertPropertyIsUnique("uri").create();
+                ResourceIterator<Relationship> result = graphDb
+                        .execute("MERGE (team:Team { uri: {teamUri} })" +
+                                " MERGE (player:Player { uri: {playerUri} })" +
+                                " MERGE (team)-[contract:" + Neo4jHelper.SoccerRelationshipTypes.IN_TEAM + "]-(player)" +
+                                "  SET contract.from = {from}, contract.to = {to}, contract.fee = {fee}" +
+                                " RETURN contract", parameters)
+                        .columnAs("contract");
+
+                if (result.hasNext()) {
+                    contracts.add(result.next());
                 }
             }
 
             tx.success();
         }
+
+        LOGGER.debug("addPlayerContracts: Player {} (at {}) has {} contracts: ", player.getName(), player.getUri(), contracts.size());
+        return contracts;
     }
 
-    public static GraphDatabaseService openGrapDb(String dbPath) {
-        final GraphDatabaseService graphDb = new GraphDatabaseFactory()
-                .newEmbeddedDatabaseBuilder(dbPath)
-                .newGraphDatabase();
-
-        // Registers a shutdown hook for the Neo4j instance so that it
-        // shuts down nicely when the VM exits (even if you "Ctrl-C" the
-        // running application).
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                graphDb.shutdown();
-            }
-        });
-
-        return graphDb;
-    }
-
-    public Set<Tournament> crawlWebsite(String rootUri) {
-        // Create the crawler. Doing it this way offers the opportunity to attach listeners
-        // which are executed after na entity was parsed.
-        PlayerCrawler playerCrawler = new PlayerCrawler();
-        playerCrawler.onPlayerCrawled(this::createPlayer);
-
-        TeamCrawler teamCrawler = new TeamCrawler();
-        teamCrawler.onTeamCrawled(this::createTeam);
-        teamCrawler.onTeamCrawled((Team team) -> playerCrawler.crawlAllPlayerPages(team.getPlayers()));
-        teamCrawler.onTeamCrawled((Team team) -> team.getPlayers().forEach((Player player) -> addPlayerToTeam(team, player)));
-
+    private TournamentCrawler getTournamentCrawler(TeamCrawler teamCrawler) {
         TournamentCrawler tournamentCrawler = new TournamentCrawler();
         tournamentCrawler.onTournamentCrawled(this::createTournament);
-        tournamentCrawler.onTournamentCrawled((Tournament tournament) -> teamCrawler.crawlAllTeamPages(tournament.getTeams()));
-        tournamentCrawler.onTournamentCrawled((Tournament tournament) ->
-                tournament.getTeams().forEach((Team team) -> addTeamToTournament(tournament, team)));
+        tournamentCrawler.onTournamentCrawled(tournament -> {
+            try {
+                teamCrawler.crawlAllTeamPages(tournament.getTeams());
+            } catch (IOException e) {
+                LOGGER.error("Failed to crawl a tournament's team pages");
+            }
+        });
+        tournamentCrawler.onTournamentCrawled(tournament ->
+                tournament.getTeams().forEach(team -> addTeamToTournament(tournament, team)));
+        return tournamentCrawler;
+    }
+
+    private TeamCrawler getTeamCrawler(PlayerCrawler playerCrawler) {
+        TeamCrawler teamCrawler = new TeamCrawler();
+        teamCrawler.onTeamCrawled(this::createTeam);
+        teamCrawler.onTeamCrawled(team -> {
+            try {
+                playerCrawler.crawlAllPlayerPages(team.getPlayers());
+            } catch (IOException e) {
+                LOGGER.error("Failed to crawl a team's player pages", e);
+            }
+        });
+        teamCrawler.onTeamCrawled(team -> team.getPlayers().forEach(player -> addPlayerToTeam(team, player)));
+        return teamCrawler;
+    }
+
+    private PlayerCrawler getPlayerCrawler() {
+        PlayerCrawler playerCrawler = new PlayerCrawler();
+        playerCrawler.onPlayerCrawled(this::createPlayer);
+        playerCrawler.onPlayerCrawled(this::addPlayerContracts);
+        return playerCrawler;
+    }
+
+    public void crawlPlayers() {
+        PlayerCrawler playerCrawler = new PlayerCrawler();
+        TeamCrawler teamCrawler = new TeamCrawler();
+
+        teamCrawler.onTeamCrawled(team -> {
+            try {
+                playerCrawler.crawlAllPlayerPages(team.getPlayers());
+            } catch (IOException e) {
+                LOGGER.error("Failed to crawl a team's player pages", e);
+            }
+        });
+        playerCrawler.onPlayerCrawled(this::createPlayer);
+
+        graphDb.execute("MATCH (team:Team) RETURN team.uri AS uri").forEachRemaining(row -> {
+            try {
+                Team team = new Team(new URL(row.get("uri").toString()), (String) row.get("name"));
+                teamCrawler.crawlTeamPage(team.getUri().toString(), team);
+            } catch (IOException e) {
+                LOGGER.error("Failed to create Team entity out of result set row", e);
+            }
+        });
+    }
+
+    public Set<Tournament> crawlWebsite(String rootUri) throws IOException {
+        // Create the crawler. Doing it this way offers the opportunity to attach listeners
+        // which are executed after an entity was parsed.
+        PlayerCrawler playerCrawler = getPlayerCrawler();
+        TeamCrawler teamCrawler = getTeamCrawler(playerCrawler);
+        TournamentCrawler tournamentCrawler = getTournamentCrawler(teamCrawler);
 
         MainCrawler crawler = new MainCrawler(tournamentCrawler);
 
@@ -192,14 +257,71 @@ public class Neo4jInserter {
         return tournaments;
     }
 
+    public Tournament crawlTournament(Tournament tournament) {
+        PlayerCrawler playerCrawler = getPlayerCrawler();
+
+        TeamCrawler teamCrawler = getTeamCrawler(playerCrawler);
+
+        TournamentCrawler tournamentCrawler = getTournamentCrawler(teamCrawler);
+
+        try {
+            tournamentCrawler.crawlTournamentPage(tournament.getUri().toString(), tournament);
+            return tournament;
+
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public void completeTeamInformation() {
+        TeamCrawler teamCrawler = new TeamCrawler();
+        teamCrawler.onTeamCrawled(this::createTeam);
+
+        try (Transaction tx = graphDb.beginTx()) {
+            ResourceIterator<String> incompleteTeams = graphDb
+                    .execute("MATCH (team:Team) " +
+                            " WHERE team.slug IS NULL " +
+                            "RETURN team.uri as teamUri")
+                    .columnAs("teamUri");
+
+            incompleteTeams.forEachRemaining(uri -> {
+                try {
+                    teamCrawler.crawlTeamPage(uri);
+                } catch (IOException e) {
+                    LOGGER.error("Failed to crawl a team page", e);
+                }
+            });
+
+            tx.success();
+        }
+    }
+
     public static void main(String[] args) {
-        String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
         String dbPath = args[0];
+        String command = args[1];
 
-        GraphDatabaseService graphDb = openGrapDb(dbPath);
-        createSchema(graphDb);
-
+        GraphDatabaseService graphDb = Neo4jHelper.openGraphDb(dbPath);
+        Neo4jHelper.createSchema(graphDb);
         Neo4jInserter inserter = new Neo4jInserter(graphDb);
-        inserter.crawlWebsite(rootUri);
+
+        try {
+            switch (command) {
+                case "tournament":
+                    inserter.crawlTournament(new Tournament(new URL(args[2]), args.length > 3 ? args[3] : ""));
+                    break;
+
+                case "all":
+                    String rootUri = "http://www.soccerbase.com/tournaments/home.sd";
+                    inserter.crawlWebsite(rootUri);
+                    break;
+
+                case "fixTeams":
+                    inserter.completeTeamInformation();
+                    break;
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
