@@ -109,6 +109,8 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         var curves = [];
         for(var i=0;i<transfers.length;i++){
             var transfer = transfers[i];
+            if(!transfer.from||!transfer.to)
+                continue;
             var from = latlongToXYZ(transfer.from.pos);
             var to = latlongToXYZ(transfer.to.pos);
             var normal = from.clone();
@@ -151,7 +153,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         controls = new THREE.OrbitControls(camera,container);
         controls.rotateSpeed = 0.5;
         controls.noPan = true;
-        controls.minDistance = globalScale*1.1;
+        controls.minDistance = globalScale*1.05;
         controls.maxDistance = globalScale*4;
         controls.zoomInfluencesRotateSpeed = true;
 
@@ -222,6 +224,8 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
                 teams[t.name] = t;
             });
         transfers.forEach(function(t){
+            if(!t.from||!t.to)
+                return;
             teams[t.from.name] = t.from;
             teams[t.to.name] = t.to;
         });
@@ -266,7 +270,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             particles.showCurves(curves);
             initTeamLocations(overlays,transfers);
         };
-        self.showRumours = function(rumours,updListener){
+        self.showTwitterRumours = function(rumours,updListener){
             var newgroup = self.updateAll(updListener);
             var locs = [];
             rumours.forEach(function(rumour){
@@ -277,6 +281,13 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             particles = new Particles(newgroup);
             particles.showLocs(locs);
             initRumours(rumours);
+        }
+        self.showTransferRumours = function(rumours,updListener){
+            var newgroup = self.updateAll(updListener);
+            var curves = generateTransfers(newgroup,rumours);
+            particles = new Particles(newgroup);
+            particles.showCurves(curves);
+            initTeamLocations(null,rumours);
         }
         self.getTeamLocations = function(){
             return teamLocs;

@@ -4,6 +4,8 @@ var unzip = require('unzip');
 var fs = require('fs');
 var twitterAPI = require('node-twitter-api');
 var unidecode = require('unidecode');
+var Levenshtein = require('./js/levenshtein.js');
+var rumourcrawl = require('./js/rumourcrawler.js');
 
 var port = process.env.PORT || 8080;
 
@@ -52,8 +54,11 @@ app.get('/search', function (req, res) {
     }));
 });
 
-app.get('/rumours', function (req, res) {
+app.get('/twitterrumours', function (req, res) {
     res.send(JSON.stringify(allrumours));
+});
+app.get('/transferrumours', function (req, res) {
+    res.send(JSON.stringify(alltransferrumours));
 });
 
 app.get('/tournaments', function (req, res) {
@@ -279,4 +284,59 @@ function fetchTwitter(){
             }
     );
 }
+var alltransferrumours = []
+function fetchRumours(){
+    rumourcrawl(function(pages){
+        console.log(pages);
+        pages.forEach(function(page){
+            var playername = unidecode(page[0]).toLowerCase();
+            var teamname = page[1].toLowerCase();
+            var prob = page[2];
+            var link = page[3];
+            var score = page[4];
+            var comparative = page[5];
+            var bestfitplayer = {score:10000,details:null};
+            allplayers.forEach(function(player){
+                if(!player || !player.namelowercase)
+                    return;
+                if(player.namelowercase.length >= playername.length && playername.indexOf(player.namelowercase)>-1){
+                    console.log('found'+playername+'->'+player.namelowercase);
+                    bestfitplayer.details = player;
+                }
+            });
+            var bestfitteam = {score:10000,details:null};
+            allteams.forEach(function(team){
+                if(!team || !team.namelowercase)
+                    return;
+                var lvsh = new Levenshtein(teamname,team.namelowercase);
+                if(lvsh.distance<bestfitteam.score){
+                    var details = getTransferDetails(team.id);
+                    if(details){
+                        bestfitteam.score = lvsh.distance;
+                        bestfitteam.details = details;
+                    }
+                }
+            });
+            console.log(teamname+' -> '+bestfitteam.details.name);
+            console.log(playername+' -> ');
+            console.log();
+            var fromteam = null;
+            if(bestfitplayer.details && bestfitplayer.details.teams.length>0 ){
+                var currentTeam = bestfitplayer.details.teams[0].uid;
+                fromteam = getTransferDetails(currentTeam);
+            }
+            alltransferrumours.push({
+                player:playername,
+                to:bestfitteam.details,
+                from:fromteam,
+                prob:prob,
+                link:link,
+                score:score,
+                comparative:comparative
+            });
+        });
+        console.log(alltransferrumours);
+    });
+}
 setTimeout(fetchTwitter,10000);
+setTimeout(fetchRumours,10000);
