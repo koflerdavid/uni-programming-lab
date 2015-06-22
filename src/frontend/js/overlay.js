@@ -3,12 +3,20 @@ var Overlay = function(dom){
     self.onSelect = null;
     self.dom = dom;
     this.overlays = {};
+    this.overlap = false;
     this.createFunction = function(loc){
         return function(){
-            self.onSelect({type:'Teams',uid:loc.uid});
+            if(loc.rumour)
+                self.onSelect({rumour:loc.rumour});
+            else
+                self.onSelect({type:'Teams',uid:loc.uid});
         }
     }
-    this.reset = function(){
+    this.reset = function(overlap){
+        if(overlap)
+            this.overlap = overlap;
+        else
+            this.overlap = false;
         this.overlays = {};
         self.dom.empty();
     }
@@ -32,22 +40,28 @@ var Overlay = function(dom){
             if(loc.visible){
                 var x = loc.pos[0];
                 var y = loc.pos[1];
-                var occpos = ((x/occdistx)|0)+((y/occdisty)|0)*1000;
-                if(x>0 && y>0 && occ[occpos]===undefined){
-                    occ[occpos] = true;
-                    occ[occpos-1] = true;
-                    occ[occpos+1] = true;
-                    occ[occpos+1000] = true;
-                    occ[occpos-1000] = true;
-                    occ[occpos-1001] = true;
-                    occ[occpos+1001] = true;
-                    occ[occpos+999] = true;
-                    occ[occpos-999] = true;
+                if(this.overlap){
                     child.style.left = x+"px";
                     child.style.top = y+"px";
                     child.style.display = "inline";
-                }else
-                    child.style.display = "none";
+                }else{
+                    var occpos = ((x/occdistx)|0)+((y/occdisty)|0)*1000;
+                    if(x>0 && y>0 && occ[occpos]===undefined){
+                        occ[occpos] = true;
+                        occ[occpos-1] = true;
+                        occ[occpos+1] = true;
+                        occ[occpos+1000] = true;
+                        occ[occpos-1000] = true;
+                        occ[occpos-1001] = true;
+                        occ[occpos+1001] = true;
+                        occ[occpos+999] = true;
+                        occ[occpos-999] = true;
+                        child.style.left = x+"px";
+                        child.style.top = y+"px";
+                        child.style.display = "inline";
+                    }else
+                        child.style.display = "none";
+                }
             }else
                 child.style.display = "none";
         };

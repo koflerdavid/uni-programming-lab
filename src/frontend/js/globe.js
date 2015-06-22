@@ -25,7 +25,7 @@ var Globe = (function(){
             glrenderer.showTwitterRumours(rumours,handleUpdate);
         }
         this.showTransferRumours = function(rumours){
-            overlayrenderer.reset();
+            overlayrenderer.reset(true);
             glrenderer.showTransferRumours(rumours,handleUpdate);
         }
         this.setOnSelect = function(onSelect){

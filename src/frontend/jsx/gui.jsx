@@ -320,6 +320,45 @@ var TwitterDetail = React.createClass({
     }
 });
 
+var RumourDetail = React.createClass({
+
+    addRow:function(rows,name,data){
+        rows.push(<DetailRow name={name} data={data} key={name}/>);
+    },
+    render: function(){
+        var self = this;
+        var rows = [];
+        if(!this.props.selected)
+            return <div></div>
+        var rumour = this.props.selected.rumour;
+        if(!rumour)
+            return <div></div>
+        this.addRow(rows,'From',rumour.from.name);
+        this.addRow(rows,'To',rumour.to.name);
+        if(rumour.prob && rumour.prob!='?')
+            this.addRow(rows,'Probabilty',rumour.prob);
+        if(rumour.score)
+            this.addRow(rows,'Opinion',rumour.score);
+        var baseurl = "http://www.transfermarkt.co.uk";
+        var link = (<a href={baseurl+rumour.link}>Source</a>);
+        this.addRow(rows,'Link',link);
+        var style = {
+            overflow:'auto',
+            pointerEvents:'auto'
+        }
+        return (
+            <div className={"panel panel-info panel-transparent"} style={style}>
+                <div className="panel-heading">
+                    <h6>{this.props.selected.rumour.player}</h6>
+                </div>
+                <ul className='list-group list-group-transparent'>
+                    {rows}
+                </ul>
+            </div>
+        )
+    }
+});
+
 var App = React.createClass({
     staticURL: {
         Players:'player',
@@ -364,7 +403,9 @@ var App = React.createClass({
                 <TwitterDetail selected={this.state.selected}/>
             </div>)
         } else if(this.state.currentstate=='rumour'){
-            details= (<div></div>);
+            details = (<div style={style}>
+                <RumourDetail selected={this.state.selected}/>
+            </div>)
         } else {
             details = (<div style={style}>
                 <IntelliSearch onSelect={this.onSelect} />
@@ -441,6 +482,7 @@ var App = React.createClass({
             this.setState({selected:{rumours:rumourfiltered,teamname:name}});
             return;
         }else if (this.state.currentstate=='rumour'){
+            this.setState({selected:{rumour:e.rumour}});
             return;
         }
 

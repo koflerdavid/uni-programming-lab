@@ -325,15 +325,16 @@ function fetchRumours(){
                 var currentTeam = bestfitplayer.details.teams[0].uid;
                 fromteam = getTransferDetails(currentTeam);
             }
-            alltransferrumours.push({
-                player:playername,
-                to:bestfitteam.details,
-                from:fromteam,
-                prob:prob,
-                link:link,
-                score:score,
-                comparative:comparative
-            });
+            if(fromteam && bestfitteam.details)
+                alltransferrumours.push({
+                    player:page[0],
+                    to:bestfitteam.details,
+                    from:fromteam,
+                    prob:prob,
+                    link:link,
+                    score:score,
+                    comparative:comparative
+                });
         });
         console.log(alltransferrumours);
     });

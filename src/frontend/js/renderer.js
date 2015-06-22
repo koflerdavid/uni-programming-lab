@@ -109,8 +109,6 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         var curves = [];
         for(var i=0;i<transfers.length;i++){
             var transfer = transfers[i];
-            if(!transfer.from||!transfer.to)
-                continue;
             var from = latlongToXYZ(transfer.from.pos);
             var to = latlongToXYZ(transfer.to.pos);
             var normal = from.clone();
@@ -129,6 +127,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             geometry.vertices = merge(curve.getPoints( 20 ),curve2.getPoints(20));
             curves.push({
                 points:geometry.vertices,
+                mid:geometry.vertices[geometry.vertices.length/2],
                 strength:Math.max(1,transfer.strength*curve.getLength()/10),
                 length:curve.getLength()*2,
                 color:col
@@ -224,8 +223,6 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
                 teams[t.name] = t;
             });
         transfers.forEach(function(t){
-            if(!t.from||!t.to)
-                return;
             teams[t.from.name] = t.from;
             teams[t.to.name] = t.to;
         });
@@ -287,7 +284,17 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             var curves = generateTransfers(newgroup,rumours);
             particles = new Particles(newgroup);
             particles.showCurves(curves);
-            initTeamLocations(null,rumours);
+            teamLocs = [];
+            for(var i =0;i<rumours.length;i++){
+                var r = rumours[i];
+                teamLocs.push({
+                    name:r.player,
+                    pos:[0,0],
+                    rumour:r,
+                    realpos:curves[i].mid,
+                    visible:true
+                });
+            }
         }
         self.getTeamLocations = function(){
             return teamLocs;
