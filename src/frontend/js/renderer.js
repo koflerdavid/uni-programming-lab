@@ -105,7 +105,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         return all;
     }
 
-    function generateTransfers(scene,transfers) {
+    function generateTransfers(scene,transfers,witharrows) {
         var curves = [];
         for(var i=0;i<transfers.length;i++){
             var transfer = transfers[i];
@@ -126,15 +126,17 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             var curve2 = new THREE.CubicBezierCurve3(mid,anch2,to,to);
 
             var offsetmid = mid.clone();
-            var cross = mid.clone();
-            cross.sub(anch1);
-            offsetmid.cross(cross);
-            offsetmid.normalize();
-            var normOffset = offsetmid.clone().multiplyScalar(-1);
-            var offsetl = (Math.random()-0.5)*curve.getLength()/2;
-            offsetmid.multiplyScalar(offsetl);
-            offsetmid.add(mid);
-            scene.add(new THREE.ArrowHelper(normOffset,offsetmid,offsetl,col));
+            if(witharrows){
+                var cross = mid.clone();
+                cross.sub(anch1);
+                offsetmid.cross(cross);
+                offsetmid.normalize();
+                var normOffset = offsetmid.clone().multiplyScalar(-1);
+                var offsetl = (Math.random()-0.5)*curve.getLength()/2;
+                offsetmid.multiplyScalar(offsetl);
+                offsetmid.add(mid);
+                scene.add(new THREE.ArrowHelper(normOffset,offsetmid,offsetl,col));
+            }
 
             var geometry = new THREE.Geometry();
             geometry.vertices = merge(curve.getPoints( 20 ),curve2.getPoints(20));
@@ -275,7 +277,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         };
         self.updateTransfers = function(overlays,transfers,updListener){
             var newgroup = self.updateAll(updListener);
-            var curves = generateTransfers(newgroup,transfers);
+            var curves = generateTransfers(newgroup,transfers,false);
             particles = new Particles(newgroup);
             particles.showCurves(curves);
             initTeamLocations(overlays,transfers);
@@ -304,7 +306,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
                 else
                     r.col = new THREE.Color('rgb('+red+','+green+',0)');
             });
-            var curves = generateTransfers(newgroup,rumours);
+            var curves = generateTransfers(newgroup,rumours,true);
             particles = new Particles(newgroup);
             particles.showCurves(curves);
             teamLocs = [];
@@ -318,6 +320,9 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
                     visible:true
                 });
             }
+            teamLocs.sort(function(a,b){
+                return -a.realpos.length()+b.realpos.length();
+            });
         }
         self.getTeamLocations = function(){
             return teamLocs;
