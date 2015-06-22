@@ -11,7 +11,7 @@
 
 \begin{document}
 \title{703804: Programming Lab: Innovative Interaktion,
-Visualisierung und Analyse\\ Progress Report}
+Visualisierung und Analyse\\ Final Report}
 \author{David Kofler \and David Westreicher \and Matej Stanic}
 \date{\today}
 \maketitle
@@ -61,9 +61,9 @@ This section gives an more detailed survey of the single sources of the project.
 	\item \cite{Shrivatava2014} have evaluated a method for sentiment analysis for Twitter posts. They implemented a crawler to obtain twitter posts, which then where classified as positive, neutral or negative using a standard Support Vector Machine (SVM). The SVM was evaluated on a predefined dataset using cross validation. The average accuracy of their method was 70.592\%. For our project, the same approach can be used for transfers and/or transfer rumors. After extracting football fan opinions on transfers from Twitter they could be classified as positive, negative or neutral. This would somehow be a measure of acceptance between the fans and the owners and managers of the club. There may be one problem, which is assigning tweets to transfers. This could be solved by only taking into account tweets which are referencing the transfer tweet.
 	\item \cite{Kunneman+12} evaluate methods which identify tweets referring to scheduled or unscheduled events. Their case study consists of two scenarios: The first one are football matches which are scheduled. On the other hand they also used an unscheduled scenario, football transfers. They have tested several state-of-the-art machine learning methods for their scenarios. The results are twofold: For the scheduled event scenario, the accuracy for some methods was above 80\% while for the unscheduled scenario the accuracy was near-baseline. This means that even though the machine learning methods can directly be used for our project, it would not be productive because of the poor performance. 
 \end{itemize}
-\section{Proposed Method}
 
-Our solution so far consists of three parts: the crawler, the geocoder and the website. The crawler is responsible for collecting the data and storing it into the database. The geocoder researches where the home ground of each team is, and adds that information to the database. The website finally renders the data on a 3D globe.
+\section{Proposed Method}
+Our solution consists of five parts: the crawler, the geocoder, the website, the transfer rumour crawler and the sentiment analysis module. The crawler is responsible for collecting the data and storing it into the database. The geocoder researches where the home ground of each team is, and adds that information to the database. The website finally renders the data on a 3D globe. The transfer rumour crawler collects transfer rumour data and corresponding opinions from various sources which are then taken for sentiment analysis. Unfortunately, we were not able to finish all of the proposed features from Section 2. Unfinished work is described in Section 6.  
 
 \subsection{Crawler}
 
@@ -77,7 +77,7 @@ The space needed to store all the data is vanishingly small (a few MB). The larg
 
 \subsection{Geocoder}
 
-The Geocoder is a Python script and uses the \verb+py2neo+ library to access the database. It then uses the OpenCage geocoder \cite{OpenCage} to look up the coordinates of each team's home ground and to store that information in the database. Since there were a few bugs in the OpenCage geocoder bindings for Python the script has to use Python's built-in \verb+urllib+ library to access the web service.
+The Geocoder is a Python script and uses the \verb+py2neo+ library to access the database. It then uses the OpenCage geocoder \cite{OpenCage} to look up the coordinates of each team's home ground and to store that information in the database. Since there were a few bugs in the OpenCage geocoder bindings for Python the script has to use Python's built-in \verb+urllib+ library to access the web service. The correctness of the OpenCage geocoder is evaluated in Section 5.1.
 
 \subsection{Website}
 
@@ -85,15 +85,38 @@ We use NodeJS \cite{NodeJS} for implementing the server-side part. We tried to u
 \\ \\
 The website uses the ThreeJS library \cite{ThreeJS} to render a globe and dotted lines connecting points on its surface. This visualization will be used to render player transfers. There is also a search field with IntelliSearch, which means that it searches for possible search results while the user types. When the user selects a result then the view is narrowed to that particular result, for example only the transfers of a particular player are displayed.
 
-\subsection{Other components}
---- under construction ---
+\subsection{Inclusion of Transfer Rumours}
+For the inclusion of transfer rumors we decided to crawl data from Twitter and \url{www.transfermarkt.co.uk} which we then visualized separately. For Twitter we crawled static sources including newspapers and accounts which directly address transfer rumours. In the case of Transfermarkt we crawled their \emph{rumour mill} which is a forum containing the latest information about rumours. The only problem left were ambiguities when matching the filtered rumours with the data in the database. To solve this we used a modified version of the Levenshtein distance when matching filtered team names to those in the database. 
+
+\subsection{Sentiment Analysis}
+For the sentiment analysis we use the posts that are associated with the transfer rumours from Transfermarkt's rumour mill. The sentiment analysis module was trained with the AFINN-111 wordlist. The visualization shows different colors depending on the obtained score: Green for positive, white for neutral and red for negative. The correctness of the sentiment analysis module is evaluated in Section 5.2.
+
 \section{Evaluation}
 \subsection{Geocoder}
-The correctness of the geocoder module is essential for our project as wrong team locations falsify the visualization. Therefore we evaluated the geocoder regarding wrong or missing results. Missing results can be directly measured: For 1165 out of 5356 teams of the database the geocoder couldn't find a valid location, which is 21.75\% of all teams. This is due to missing ground info, and also due to the fact that the home cities cannot always be inferred from the team name (e.g. Schalke 04 is from Gelsenkirchen). On the other hand evaluating wrong locations requires manual verification. So we chose a sample size of 250, reaching a confidence level of 90\%. Out of those 250 teams, 147 (58.8\%) were labeled correctly, 44 (17.6\%) were assigned wrong and 59 (23.6\%) were missing. The main reason for wrong locations were ambiguities concerning town names. Especially English teams often had been assigned a same-named town in the USA. The same problems occurred for other English-speaking countries as Scotland, Ireland, Australia, New Zealand and Canada. All in all geocoding doesn't seem to be suitable when it comes to football teams because it requires manual verification and for 40\% of all teams the location has to be set manually.
+The correctness of the geocoder module is essential for our project as wrong team locations falsify the visualization. Therefore we evaluated the geocoder regarding wrong or missing results. Missing results can be directly measured: For 1165 out of 5356 teams of the database the geocoder couldn't find a valid location, which is 21.75\% of all teams. This is due to missing ground info, and also due to the fact that the home cities cannot always be inferred from the team name (e.g. Schalke 04 is from Gelsenkirchen). 
+\\ \\
+On the other hand evaluating wrong locations requires manual verification. So we chose a sample size of 250, reaching a confidence level of 90\%. Out of those 250 teams, 147 (58.8\%) were labeled correctly, 44 (17.6\%) were assigned wrong and 59 (23.6\%) were missing. The main reason for wrong locations were ambiguities concerning town names. Especially English teams often had been assigned a same-named town in the USA. The same problems occurred for other English-speaking countries as Scotland, Ireland, Australia, New Zealand and Canada. All in all geocoding doesn't seem to be suitable when it comes to football teams because it requires manual verification and for 40\% of all teams the location has to be set manually.
+
+
 \subsection{Sentiment Analysis}
 
 \section{Conclusion}
---- under construction ---
+
+
+\subsection{Outline/Future Work}
+This is an outline of done and unfinished work from the problem definition (Section 2):
+
+\begin{itemize}
+\item \textbf{Visualization of the football transfer graph:} Done. Could be extended with filter to only show special kinds of transfers, e.g. only transfers from France etc.
+\item \textbf{Analysis and visualization of team/player statistics from the football transfer graph:} Not done. Will be part of future work.
+\item \textbf{Calculation of popularity of teams using twitter:} Not done. Will be part of future work.
+\item \textbf{Inclusion and analysis of transfer rumors from different sources:} Done. Could be extended with a classifier that classifies whether transfer rumours are going to be realized.	
+\item \textbf{Classification and visualization of fan opinions from twitter:} Done using sentiment analysis.
+\item \textbf{Other Possible Improvements \& Future Work:}
+\begin{itemize}
+	\item Using data which is not focused on England. 
+\end{itemize}
+\end{itemize}
 \bibliographystyle{plain}
 \bibliography{refs}
 \end{document}
