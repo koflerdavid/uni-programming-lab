@@ -30,7 +30,7 @@ The single components of the project can be summarized as following:
 	
 	\item \textbf{Inclusion and analysis of transfer rumors from different sources.} Using twitter and/or news sites we will include transfer rumors. \cite{Kunneman+12} have used different machine learning methods to find tweets that refer to scheduled or unscheduled events like transfer rumors. We can directly use their approach in our project, but for unscheduled events the performance is poor.
 	
-	\item \textbf{Classification and visualization of fan opinions from twitter.} The project will also include user opinions about transfers. \cite{Shrivatava2014} have proposed a model for classifying user tweets as positive, negative or neutral using Support Vector Machines. This model can also be applied to transfer opinions.
+	\item \textbf{Classification and visualization of fan opinions.} The project will also include user opinions about transfers. \cite{Shrivatava2014} have proposed a model for classifying user tweets as positive, negative or neutral using Support Vector Machines. This model can also be applied to transfer opinions.
 \end{itemize}
 
 All in all the project should offer football fans a whole new level of transfer investigation. The inclusion and analysis of twitter data combined with a intuitive visualization is the key innovation compared to other projects.
@@ -99,7 +99,9 @@ On the other hand evaluating wrong locations requires manual verification. So we
 
 
 \subsection{Sentiment Analysis}
-
+Sentiment analysis is performed on the posts from Transfermarkt's rumour mill. Unfortunately, most of the posts are informative and don't reflect the users' opinions. This means that the sentiment analysis should deliver neutral results (score near to 0). However, most of the transfers are labeled as slightly positive (score from 0 to 2). 
+\\ \\
+In order to improve the quality of the results, more opinion-based posts should be considered. One possibility is the inclusion of Twitter posts that contain the corresponding hashtags of a transfer. However, again, there is a high percentage of information-only tweets that cannot be seen as opinions.
 \section{Conclusion}
 
 
@@ -111,7 +113,7 @@ This is an outline of done and unfinished work from the problem definition (Sect
 \item \textbf{Analysis and visualization of team/player statistics from the football transfer graph:} Not done. Will be part of future work.
 \item \textbf{Calculation of popularity of teams using twitter:} Not done. Will be part of future work.
 \item \textbf{Inclusion and analysis of transfer rumors from different sources:} Done. Could be extended with a classifier that classifies whether transfer rumours are going to be realized.	
-\item \textbf{Classification and visualization of fan opinions from twitter:} Done using sentiment analysis.
+\item \textbf{Classification and visualization of fan opinions:} Done using sentiment analysis. Inclusion of Twitter posts would increase the quality of sentiment analysis as more opinions are available.
 \item \textbf{Other Possible Improvements \& Future Work:}
 \begin{itemize}
 	\item Using data which is not focused on England. 
