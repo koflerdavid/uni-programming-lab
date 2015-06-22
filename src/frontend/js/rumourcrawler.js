@@ -34,7 +34,7 @@ function scrape(clb){
     var baseuri = 'http://www.transfermarkt.co.uk/rumourmill/detail/forum/180/ajax/threadList';
     var pages = [];
 
-    Promise.resolve([1])
+    Promise.resolve([1,2,3])
     //Promise.resolve([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20])
         .each(function(page) {
             var uri = baseuri;
@@ -181,9 +181,10 @@ function sentimentAnalysis(link, callback){
                         comparative += res.comparative;
                     }
                 }
-
-                score /= counter;
-                comparative /= counter;
+                if(counter>0){
+                    score /= counter;
+                    comparative /= counter;
+                }
                 callback(null, [score, comparative]);
             }
         })

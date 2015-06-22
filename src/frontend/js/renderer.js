@@ -112,7 +112,7 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             var from = latlongToXYZ(transfer.from.pos);
             var to = latlongToXYZ(transfer.to.pos);
             var normal = from.clone();
-            var col = transfer.isIngoing?0x0000ff:0xff0000;
+            var col = transfer.col?transfer.col:(transfer.isIngoing?0x0000ff:0xff0000);
             normal.sub(to);
             var mid = slerp(from,to,0.5);
             mid.multiplyScalar(globalScale*(1.0+(normal.length()/globalScale)/5));
@@ -121,13 +121,26 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
             var anch2 = mid.clone();
             anch2.add(normal.clone().multiplyScalar(-0.5));
 
+
             var curve = new THREE.CubicBezierCurve3(from,from,anch1,mid);
             var curve2 = new THREE.CubicBezierCurve3(mid,anch2,to,to);
+
+            var offsetmid = mid.clone();
+            var cross = mid.clone();
+            cross.sub(anch1);
+            offsetmid.cross(cross);
+            offsetmid.normalize();
+            var normOffset = offsetmid.clone().multiplyScalar(-1);
+            var offsetl = (Math.random()-0.5)*curve.getLength()/2;
+            offsetmid.multiplyScalar(offsetl);
+            offsetmid.add(mid);
+            scene.add(new THREE.ArrowHelper(normOffset,offsetmid,offsetl,col));
+
             var geometry = new THREE.Geometry();
             geometry.vertices = merge(curve.getPoints( 20 ),curve2.getPoints(20));
             curves.push({
                 points:geometry.vertices,
-                mid:geometry.vertices[geometry.vertices.length/2],
+                mid:offsetmid,
                 strength:Math.max(1,transfer.strength*curve.getLength()/10),
                 length:curve.getLength()*2,
                 color:col
@@ -281,6 +294,16 @@ var Renderer = (function (THREE, Detector, Particles, Shaders, Stats, undefined)
         }
         self.showTransferRumours = function(rumours,updListener){
             var newgroup = self.updateAll(updListener);
+            rumours.forEach(function(r){
+                r.strength = 5;
+                var score = (r.score*80)|0;
+                var green = Math.min(255,122+score);
+                var red = Math.max(0,122-score);
+                if(score==0)
+                    r.col = new THREE.Color('rgb(122,122,122)');
+                else
+                    r.col = new THREE.Color('rgb('+red+','+green+',0)');
+            });
             var curves = generateTransfers(newgroup,rumours);
             particles = new Particles(newgroup);
             particles.showCurves(curves);
