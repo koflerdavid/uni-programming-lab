@@ -115,7 +115,7 @@ The obvious modification compared to the original Levenshtein distance is the mi
 \label{sentiment}
 For the sentiment analysis we use the posts that are associated with the transfer rumours from Transfermarkt's rumour mill. The sentiment analysis module is based on the AFINN-111 wordlist\footnote{\url{http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010}}. The wordlist contains 2477 English words and phrases, each manually rated with values between -5 (negative) and 5 (positive) that reflect the sentiment. 
 \\ \\
-Each post is then analyzed word by word. It is checked whether a word is contained in the AFINN-111 wordlist. For each such word the values are summed up and an overall score is obtained that represents the sentiment of the whole post. 
+Each post is then analyzed word by word. It is checked whether a word is contained in the AFINN-111 wordlist. For each such word the sentiment values are summed up and an overall score is obtained that represents the sentiment of the whole post. Finally, the mean score of all transfer posts is calculated which is then used as final transfer score.
 \\ \\
 The results are visualized using different colors depending on the obtained score: green for positive, white for neutral and red for negative. The correctness of the sentiment analysis module is evaluated in Section \ref{eval:sen}.
 
@@ -129,9 +129,9 @@ On the other hand evaluating wrong locations requires manual verification. So we
 
 \subsection{Sentiment Analysis}
 \label{eval:sen}
-Sentiment analysis is performed on the posts from Transfermarkt's rumour mill. Unfortunately, basically all the posts are purely informative and don't reflect the users' opinions. Using a random sample size of 100, 100\% of the posts were informative posts with citations of newspapers. 
+Sentiment analysis is performed on the posts from Transfermarkt's rumour mill. Unfortunately, all the posts are purely informative and don't reflect the users' opinions. Considering a random sample size of 100 posts, 100\% of the posts were informative posts with citations of newspapers with absolutely no opinion at all. 
 \\ \\
-However, it is also interesting to analyze these posts. One would expect that the sentiment analysis of such posts should deliver neutral results (score near to 0) due to the neutrality of the newspaper articles. However, many of the transfers are labeled as positive or negative. We tried to investigate the reasons of this phenomenon. 
+However, it is also interesting to analyze these posts. One would expect that the sentiment analysis of such posts should deliver neutral results (score near to 0) due to the neutrality of the newspaper articles. However, many of the transfers are labeled as positive, some even as negative. We tried to investigate the reasons of this phenomenon. 
 \\ \\
 In order to improve the quality of the results, more opinion-based posts should be considered. One possibility is the inclusion of Twitter posts that contain the corresponding hashtags of a transfer. However, again, our observations have shown that there is a high percentage of information-only tweets that cannot be seen as opinions.
 
