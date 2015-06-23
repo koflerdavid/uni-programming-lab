@@ -20,6 +20,7 @@ Visualisierung und Analyse\\ Final Report}
 Over the past decades football has become the world's most popular sport with over 250 million players in 200 countries. Including over 3 billion fans worldwide, it has also become a multi-million dollar business. One of the main income sources of football clubs are transfers. Huge amounts of money are spent for transfer fees. For football fans the transfer circus is always of big interest, but with approximately 12000 transfers per year it is difficult to keep track of every single transfer. Also, football fans are interested in transfer rumors and statistics. This is the starting point of our project. Basically, the goal of the project is to visualize data concerning football transfers including twitter data, which is interesting for football fans.
 
 \section{Problem Definition}
+\label{problemdef}
 The single components of the project can be summarized as following:
 \begin{itemize}
 	\item \textbf{Visualization of the football transfer graph.} Using data from \url{www.soccerbase.com} the goal is to construct a graph of player transfers between clubs. Intuitively, the graph is a directed graph, where the nodes are the teams and the edges have the players and the transfer fees as attributes. Our visualization idea builds up upon the graph from \url{www.transferwindow.info}. Initially, the graph is visualized in a geographical world map. The user then can click on a league/team/player to show only transfers of the league/team/player. Also, clicking on one of those three would provide additional statistics. Furthermore, an extended filter can be applied, e.g to show only transfers of players which are under 21, or players which are from Spain.
@@ -63,13 +64,13 @@ This section gives an more detailed survey of the single sources of the project.
 \end{itemize}
 
 \section{Proposed Method}
-Our solution consists of five parts: the crawler, the geocoder, the website, the transfer rumour crawler and the sentiment analysis module. The crawler is responsible for collecting the data and storing it into the database. The geocoder researches where the home ground of each team is, and adds that information to the database. The website finally renders the data on a 3D globe. The transfer rumour crawler collects transfer rumour data and corresponding opinions from various sources which are then taken for sentiment analysis. Unfortunately, we were not able to finish all of the proposed features from Section 2. Unfinished work is described in Section 6.  
+Our solution consists of five parts: the crawler, the geocoder, the transfer rumour crawler, the sentiment analysis module and the website. The crawler is responsible for collecting the football transfer data and storing it into the database. The geocoder researches where the home ground of each team is, and adds that information to the database. The transfer rumour crawler collects transfer rumour data and corresponding opinions from various sources which are then taken for sentiment analysis. The website finally renders the data on a 3D globe. Unfortunately, we were not able to finish all of the proposed features from Section \ref{problemdef}. Unfinished and future work is described in Section \ref{concl}.  
 
 \subsection{Crawler}
 
 The crawler which pulls the data from the website is written in Java. It uses the \verb+jsoup+ library \cite{jsoup} to fetch HTML websites and to parse them. CSS Selectors can then be used to extract the content from the HTML DOM tree. By using Dependency Injection and the Observer model the crawlers for the entities Team, Player and Tournament can be composed, which eases testing the components a lot. Also, since there is no monolithic component which does everything, the crawlers can be used independently from each other, for example to update the data of only a particular entity. 
 \\ \\
-Implementing the crawler was a bit tricky because not every web page contains all the data. Also, it was not obvious how to store various data, for example the transfers. The web page only contains the contracts a player has with clubs. The transfers have to be calculated, which is  still on our To Do-list because there are overlaps in the contract periods. 
+Implementing the crawler was a bit tricky because not every web page contains all the data. Also, it was not obvious how to store various data, for example the transfers. The web page only contains the contracts a player has with clubs. The transfers have to be calculated, because there are overlaps in the contract periods. 
 \\ \\
 The crawler takes a lot of time to run since there should be a short time delay (at least 10 seconds) between each access to the website, else the website administrator might take measures against a perceived attack.
 \\ \\
@@ -77,7 +78,7 @@ The space needed to store all the data is vanishingly small (a few MB). The larg
 
 \subsection{Geocoder}
 
-The Geocoder is a Python script and uses the \verb+py2neo+ library to access the database. It then uses the OpenCage geocoder \cite{OpenCage} to look up the coordinates of each team's home ground and to store that information in the database. Since there were a few bugs in the OpenCage geocoder bindings for Python the script has to use Python's built-in \verb+urllib+ library to access the web service. The correctness of the OpenCage geocoder is evaluated in Section 5.1.
+The Geocoder is a Python script and uses the \verb+py2neo+ library to access the database. It then uses the OpenCage geocoder \cite{OpenCage} to look up the coordinates of each team's home ground and to store that information in the database. If no home ground information is available (which is the case for many teams) the team name is used as input for geocoding. Since there were a few bugs in the OpenCage geocoder bindings for Python the script has to use Python's built-in \verb+urllib+ library to access the web service. The correctness of the OpenCage geocoder is evaluated in Section \ref{eval:geo}.
 
 \subsection{Website}
 
@@ -86,27 +87,58 @@ We use NodeJS \cite{NodeJS} for implementing the server-side part. We tried to u
 The website uses the ThreeJS library \cite{ThreeJS} to render a globe and dotted lines connecting points on its surface. This visualization will be used to render player transfers. There is also a search field with IntelliSearch, which means that it searches for possible search results while the user types. When the user selects a result then the view is narrowed to that particular result, for example only the transfers of a particular player are displayed.
 
 \subsection{Inclusion of Transfer Rumours}
-For the inclusion of transfer rumors we decided to crawl data from Twitter and \url{www.transfermarkt.co.uk} which we then visualized separately. For Twitter we crawled static sources including newspapers and accounts which directly address transfer rumours. In the case of Transfermarkt we crawled their \emph{rumour mill} which is a forum containing the latest information about rumours. The only problem left were ambiguities when matching the filtered rumours with the data in the database. To solve this we used a modified version of the Levenshtein distance when matching filtered team names to those in the database. 
+For the inclusion of transfer rumors we decided to crawl data from Twitter and \url{www.transfermarkt.co.uk} which we then visualized separately. For Twitter we crawled static sources including newspapers and accounts which directly address transfer rumours. The posts are visualized in the \emph{Twitter} tab of our website and are not investigated further. In the case of Transfermarkt we crawled their \emph{rumour mill} which is a forum containing the latest information about rumours. These are analyzed concerning their sentiment (Section \ref{sentiment}) and visualized in the \emph{Rumours} tab of the website.
+\\ \\
+The only sort of problems that needed intervention were ambiguities when matching the filtered rumours with the data in the database. Often, teams are abbreviated which means that they cannot be matched directly. To solve this we used a modified algorithm based on the Levenshtein distance (also called edit distance) when matching filtered team names to those in the database. The modified Levenshtein distance between two strings $a = a_1 ... a_n$ and $b = b_1 ... b_m$ is given by $d_{m,n}$, which is defined recursively:
+
+\begin{equation}
+d_{0,0} = 0
+\label{eq1}
+\end{equation}
+\begin{equation}
+d_{i,0} = i, \mbox{ } 1 \leq i \leq m \\
+\label{eq2}
+\end{equation}
+\begin{equation}
+d_{0,j} = j, \mbox{ } 1 \leq j \leq n \\
+\label{eq3}
+\end{equation}
+\begin{equation}
+d_{i,j} = min \left\{\begin{array}{cl} d_{i-1,j-1} & +0 \mbox{, if } a_i = b_j\\ d_{i-1,j-1} & +1 \mbox{ (substitution)} \\ d_{i,j-1} & +0 \mbox{ (insertion)} \\ d_{i-1,j} & +1 \mbox{ (deletion)}  \end{array}\right. \mbox{  } 1 \leq i \leq m, 1 \leq j \leq n \\
+\label{eq4}
+\end{equation}
+\\
+The obvious modification compared to the original Levenshtein distance is the missing penalization of the insertion operation. This suits our case as team names often come abbreviated which should not be penalized by higher distance. An example would be matching \emph{Tottenham} with \emph{Tottenham Hotspur}. Originally, the edit distance is 8, as 8 insertions are needed. In our case the edit distance is 0 as insertions are not penalized. Our observations have shown that the matching works correctly but issues cannot be excluded.
+
 
 \subsection{Sentiment Analysis}
-For the sentiment analysis we use the posts that are associated with the transfer rumours from Transfermarkt's rumour mill. The sentiment analysis module was trained with the AFINN-111 wordlist. The visualization shows different colors depending on the obtained score: Green for positive, white for neutral and red for negative. The correctness of the sentiment analysis module is evaluated in Section 5.2.
+\label{sentiment}
+For the sentiment analysis we use the posts that are associated with the transfer rumours from Transfermarkt's rumour mill. The sentiment analysis module is based on the AFINN-111 wordlist\footnote{\url{http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010}}. The wordlist contains 2477 English words and phrases, each manually rated with values between -5 (negative) and 5 (positive) that reflect the sentiment. 
+\\ \\
+Each post is then analyzed word by word. It is checked whether a word is contained in the AFINN-111 wordlist. For each such word the sentiment values are summed up and an overall score is obtained that represents the sentiment of the whole post. Finally, the mean score of all transfer posts is calculated which is then used as final transfer score.
+\\ \\
+The results are visualized using different colors depending on the obtained score: green for positive, white for neutral and red for negative. The correctness of the sentiment analysis module is evaluated in Section \ref{eval:sen}.
 
 \section{Evaluation}
 \subsection{Geocoder}
+\label{eval:geo}
 The correctness of the geocoder module is essential for our project as wrong team locations falsify the visualization. Therefore we evaluated the geocoder regarding wrong or missing results. Missing results can be directly measured: For 1165 out of 5356 teams of the database the geocoder couldn't find a valid location, which is 21.75\% of all teams. This is due to missing ground info, and also due to the fact that the home cities cannot always be inferred from the team name (e.g. Schalke 04 is from Gelsenkirchen). 
 \\ \\
 On the other hand evaluating wrong locations requires manual verification. So we chose a sample size of 250, reaching a confidence level of 90\%. Out of those 250 teams, 147 (58.8\%) were labeled correctly, 44 (17.6\%) were assigned wrong and 59 (23.6\%) were missing. The main reason for wrong locations were ambiguities concerning town names. Especially English teams often had been assigned a same-named town in the USA. The same problems occurred for other English-speaking countries as Scotland, Ireland, Australia, New Zealand and Canada. All in all geocoding doesn't seem to be suitable when it comes to football teams because it requires manual verification and for 40\% of all teams the location has to be set manually.
 
 
 \subsection{Sentiment Analysis}
-Sentiment analysis is performed on the posts from Transfermarkt's rumour mill. Unfortunately, most of the posts are informative and don't reflect the users' opinions. This means that the sentiment analysis should deliver neutral results (score near to 0). However, most of the transfers are labeled as slightly positive (score from 0 to 2). 
+\label{eval:sen}
+Sentiment analysis is performed on the posts from Transfermarkt's rumour mill. Unfortunately, all the posts are purely informative and don't reflect the users' opinions. Considering a random sample size of 100 posts, 100\% of the posts were informative posts with citations of newspapers with absolutely no opinion at all. 
 \\ \\
-In order to improve the quality of the results, more opinion-based posts should be considered. One possibility is the inclusion of Twitter posts that contain the corresponding hashtags of a transfer. However, again, there is a high percentage of information-only tweets that cannot be seen as opinions.
+However, it is also interesting to analyze these posts. One would expect that the sentiment analysis of such posts should deliver neutral results (score near to 0) due to the neutrality of the newspaper articles. However, many of the transfers are labeled as positive, some even as negative. We tried to investigate the reasons of this phenomenon. 
+\\ \\
+In order to improve the quality of the results, more opinion-based posts should be considered. One possibility is the inclusion of Twitter posts that contain the corresponding hashtags of a transfer. However, again, our observations have shown that there is a high percentage of information-only tweets that cannot be seen as opinions.
+
 \section{Conclusion}
-
-
+\label{concl}
 \subsection{Outline/Future Work}
-This is an outline of done and unfinished work from the problem definition (Section 2):
+This is an outline of done and unfinished work from the problem definition (Section \ref{problemdef}):
 
 \begin{itemize}
 \item \textbf{Visualization of the football transfer graph:} Done. Could be extended with filter to only show special kinds of transfers, e.g. only transfers from France etc.
