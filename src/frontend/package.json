@@ -22,7 +22,6 @@
         "request": "latest",
         "cheerio": "latest",
         "sentiment": "latest"
-
     },
     "scripts": {
         "start": "node_modules/react-tools/bin/jsx --extension jsx --watch jsx js & node server.js",
