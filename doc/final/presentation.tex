@@ -4,7 +4,7 @@
 
 \title[Soccervis] % (optional, only for long titles)
 {Soccervis - Visualizing Football Transfers}
-\subtitle{Midterm Presentation}
+\subtitle{Final Presentation}
 \author[Kofler, Stanic, Westreicher] % (optional, for multiple authors)
 {David~Kofler \and Matej~Stanic \and David~Westreicher}
 
@@ -105,10 +105,10 @@
     \frametitle{Data}
 		\begin{itemize}
       \item Data crawled from www.soccerbase.com
-			\item Contains 100 leagues, 3000 teams, 100000 players, 300000 transfers
-			\item For testing purposes: Small database \\
-						$\rightarrow$ 7 teams, 200 players, 800 transfers \\
-						$\rightarrow$ Size: 4 MB
+			\item Contains 100 leagues, 5000 teams, 100000 players, 300000 transfers
+			%\item For testing purposes: Small database \\
+				%		$\rightarrow$ 7 teams, 200 players, 800 transfers \\
+					%	$\rightarrow$ Size: 4 MB
 			\item Database needs to be updated only when the transfer windows are open (Jan-Feb and Jun-Aug)
 		\end{itemize}
   \end{frame}
@@ -120,7 +120,7 @@
 			\item Analysis and visualization of team/player statistics from the football transfer graph 
 			\item Calculation of popularity of teams using Twitter 
 			\item Inclusion and analysis of transfer rumors from different sources \checkmark
-			\item Classification and visualization of fan opinions from Twitter \checkmark
+			\item Classification and visualization of fan opinions \checkmark
 		\end{itemize}
   \end{frame}
 	
@@ -156,8 +156,11 @@
 		\framesubtitle{Sentiment Analysis}
 		$\rightarrow$ needs manual verification
 		\begin{itemize}
-		\item
+		\item difficult as most of the posts are informative
+		\item should be neutral
+		\item scores mostly between 0 and 2 (slightly positive)
 		\end{itemize}
+		$\rightarrow$ Future Work: Inclusion of Twitter posts 
   \end{frame}
 	
 	
@@ -165,6 +168,7 @@
     \frametitle{Future Work}
 		\begin{itemize}
       \item Adding missing locations and fix wrong ones
+			\item Inclusion of Twitter posts for sentiment analysis
 			\item Analysis and visualization of team/player statistics from the football transfer graph
 			\item Calculation of popularity of teams using Twitter
 		\end{itemize}
