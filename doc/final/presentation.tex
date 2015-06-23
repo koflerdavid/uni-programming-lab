@@ -70,27 +70,6 @@
      \end{columns}
   \end{frame}
 	
-	 \begin{frame}
-    \frametitle{Approaches}
-		\framesubtitle{Website}
-		\textbf{Website} \\
-		$\rightarrow$ Visualize Data
-    \begin{columns}[T] % contents are top vertically aligned
-     \begin{column}[T]{5cm} % each column can also be its own environment
-			\begin{center}
-     \includegraphics[height=3cm]{nodejs.png}\\
-			Node.js - Server-side platform
-			\end{center}
-     \end{column}
-     \begin{column}[T]{5cm} % alternative top-align that's better for graphics
-		\begin{center}
-		 \includegraphics[height=3cm]{threejs.png} \\
-			Three.js - Javascript 3D library
-			\end{center}
-     \end{column}
-     \end{columns}
-  \end{frame}
-	
 	\begin{frame}
 		\frametitle{Approaches}
 		\framesubtitle{Database}
@@ -114,12 +93,33 @@
   \end{frame}
 	
 	\begin{frame}
+    \frametitle{Approaches}
+		\framesubtitle{Website}
+		\textbf{Website} \\
+		$\rightarrow$ Visualize Data
+    \begin{columns}[T] % contents are top vertically aligned
+     \begin{column}[T]{5cm} % each column can also be its own environment
+			\begin{center}
+     \includegraphics[height=3cm]{nodejs.png}\\
+			Node.js - Server-side platform
+			\end{center}
+     \end{column}
+     \begin{column}[T]{5cm} % alternative top-align that's better for graphics
+		\begin{center}
+		 \includegraphics[height=3cm]{threejs.png} \\
+			Three.js - Javascript 3D library
+			\end{center}
+     \end{column}
+     \end{columns}
+  \end{frame}
+	
+	\begin{frame}
     \frametitle{Outline}
 		\begin{itemize}
       \item Visualization of the football transfer graph \checkmark
 			\item Analysis and visualization of team/player statistics from the football transfer graph 
 			\item Calculation of popularity of teams using Twitter 
-			\item Inclusion and analysis of transfer rumors from different sources \checkmark
+			\item Inclusion and analysis of transfer rumors from different sources (Transfermarkt \& Twitter) \checkmark
 			\item Classification and visualization of fan opinions \checkmark
 		\end{itemize}
   \end{frame}
@@ -156,9 +156,9 @@
 		\framesubtitle{Sentiment Analysis}
 		$\rightarrow$ needs manual verification
 		\begin{itemize}
-		\item difficult as most of the posts are informative
+		\item difficult as most of the posts are informative (www.transfermarkt.co.uk)
 		\item should be neutral
-		\item scores mostly between 0 and 2 (slightly positive)
+		\item scores mostly slightly positive
 		\end{itemize}
 		$\rightarrow$ Future Work: Inclusion of Twitter posts 
   \end{frame}
