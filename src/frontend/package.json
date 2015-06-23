@@ -21,7 +21,8 @@
         "underscore": "1.8.*",
         "request": "latest",
         "cheerio": "latest",
-        "sentiment": "latest"
+        "sentiment": "latest",
+        "sleep": "latest"
 
     },
     "scripts": {
