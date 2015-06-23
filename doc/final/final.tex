@@ -133,9 +133,17 @@ Sentiment analysis is performed on the posts from Transfermarkt's rumour mill. U
 \\ \\
 However, it is also interesting to analyze these posts. One would expect that the sentiment analysis of such posts should deliver neutral results (score near to 0) due to the neutrality of the newspaper articles. However, many of the transfers are labeled as positive, some even as negative. We tried to investigate the reasons of this phenomenon. 
 \\ \\
+For our tests we chose a random sample size of 64 transfers. Of those 64 transfers 42 transfers (65.63\%) have a score which is equal to 0. Furthermore, 8 transfers (12.5\%) have a score greater than -1 and smaller than 1, which we labeled as \emph{near neutral}. The rest correspond to positive (13 or 20.31\%) and negative labeled transfers (only 1 or 1.56\%). Taking into account the first two classes (neutral and near neutral) for measuring accuracy, the sentiment analysis classifier thus reaches an accuracy of 78.13\% (50 out of 64 labeled correctly).
+\\ \\
+Trying to find the reason for the relatively high amount of positively labeled transfers we decided to investigate the content of these and to compare them to the other ones. In all 13 cases the reason is obvious: The posts refer to players' good performances in the past. We think that our observation opens new opportunities to use sentiment analysis for labeling past performances of players.
+\\ \\
 In order to improve the quality of the results, more opinion-based posts should be considered. One possibility is the inclusion of Twitter posts that contain the corresponding hashtags of a transfer. However, again, our observations have shown that there is a high percentage of information-only tweets that cannot be seen as opinions.
 
 \section{Conclusion}
+Even though we could not fulfill all of our targeted goals, we think that we have developed a nice tool for interested football fans who are now able to investigate the history of transfers in a new way. Also, we provide a new way of delivering transfer rumours which includes sentiment analysis based on informative posts. 
+\\ \\
+Our evaluations reveal two main findings. First, geocoding is not suitable for our case. Even though it delivers many good results all of them need to be checked manually which is overhead compared to doing it directly. Second, sentiment analysis shows that even though informative posts should be neutral, many of them are labeled positive because of praising words towards players. This can be directly used to analyze past performances of players.
+
 \label{concl}
 \subsection{Outline/Future Work}
 This is an outline of done and unfinished work from the problem definition (Section \ref{problemdef}):
@@ -145,10 +153,11 @@ This is an outline of done and unfinished work from the problem definition (Sect
 \item \textbf{Analysis and visualization of team/player statistics from the football transfer graph:} Not done. Will be part of future work.
 \item \textbf{Calculation of popularity of teams using twitter:} Not done. Will be part of future work.
 \item \textbf{Inclusion and analysis of transfer rumors from different sources:} Done. Could be extended with a classifier that classifies whether transfer rumours are going to be realized.	
-\item \textbf{Classification and visualization of fan opinions:} Done using sentiment analysis. Inclusion of Twitter posts would increase the quality of sentiment analysis as more opinions are available.
+\item \textbf{Classification and visualization of fan opinions:} Done using sentiment analysis. The inclusion of Twitter posts would increase the quality of sentiment analysis as more opinions are available.
 \item \textbf{Other Possible Improvements \& Future Work:}
 \begin{itemize}
-	\item Using data which is not focused on England. 
+	\item Using data which is not focused on England.
+	\item Add missing locations and fix wrong ones.
 \end{itemize}
 \end{itemize}
 \bibliographystyle{plain}
