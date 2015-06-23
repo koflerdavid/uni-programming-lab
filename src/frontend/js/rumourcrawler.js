@@ -1,7 +1,6 @@
 var Promise = require('bluebird');
 var cheerio = require('cheerio');
 var express = require('express');
-var sleep = require('sleep');
 var fs = require('fs');
 var request = require('request');
 var sentiment = require('sentiment');
@@ -41,7 +40,6 @@ function scrape(clb){
             var uri = baseuri;
             uri += "/page/";
             uri += page;
-            sleep.sleep(2);
             console.dir(uri);
 
             var options = {
@@ -52,6 +50,7 @@ function scrape(clb){
             };
 
             pages.push(requestP(options)
+                .delay(2 * 1000)
                 .spread(function(response, html) {
                     var $ = cheerio.load(html);
                     var probs = new Array();
@@ -125,6 +124,7 @@ var doSentimentAnalysisForNames = function (names, toTeams, probs, links) {
     var pSentimentAnalysis = Promise.promisify(sentimentAnalysis);
     var results =  names.map(function (name, i) {
         return pSentimentAnalysis(links[i])
+            .delay(1 * 1000)
             .then(function (res) {
                 var score = res[0], comparative = res[1];
                 //console.log(name);
@@ -134,7 +134,6 @@ var doSentimentAnalysisForNames = function (names, toTeams, probs, links) {
                 //console.log('avg score '.concat(score));
                 //console.log('comparative '.concat(comparative));
                 //console.log("\n");
-                sleep.sleep(1);
                 return [name, toTeams[i], probs[i], links[i], score, comparative];
             });
     });

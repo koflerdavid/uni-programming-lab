@@ -21,9 +21,7 @@
         "underscore": "1.8.*",
         "request": "latest",
         "cheerio": "latest",
-        "sentiment": "latest",
-        "sleep": "latest"
-
+        "sentiment": "latest"
     },
     "scripts": {
         "start": "node_modules/react-tools/bin/jsx --extension jsx --watch jsx js & node server.js",
