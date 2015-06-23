@@ -287,7 +287,7 @@ function fetchTwitter(){
 var alltransferrumours = []
 function fetchRumours(){
     rumourcrawl(function(pages){
-        console.log(pages);
+        console.log('crawled '+(pages.length)+' pages');
         pages.forEach(function(page){
             var playername = unidecode(page[0]).toLowerCase();
             var teamname = page[1].toLowerCase();
@@ -300,7 +300,7 @@ function fetchRumours(){
                 if(!player || !player.namelowercase)
                     return;
                 if(player.namelowercase.length >= playername.length && playername.indexOf(player.namelowercase)>-1){
-                    console.log('found'+playername+'->'+player.namelowercase);
+                    //console.log('found '+playername+'->'+player.namelowercase);
                     bestfitplayer.details = player;
                 }
             });
@@ -317,9 +317,8 @@ function fetchRumours(){
                     }
                 }
             });
-            console.log(teamname+' -> '+bestfitteam.details.name);
-            console.log(playername+' -> ');
-            console.log();
+            //console.log(teamname+' -> '+bestfitteam.details.name);
+            //console.log(playername+' -> ');
             var fromteam = null;
             if(bestfitplayer.details && bestfitplayer.details.teams.length>0 ){
                 var currentTeam = bestfitplayer.details.teams[0].uid;
@@ -336,7 +335,7 @@ function fetchRumours(){
                     comparative:comparative
                 });
         });
-        console.log(alltransferrumours);
+        //console.log(alltransferrumours);
     });
 }
 setTimeout(fetchTwitter,10000);

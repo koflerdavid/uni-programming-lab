@@ -1,6 +1,7 @@
 var Promise = require('bluebird');
 var cheerio = require('cheerio');
 var express = require('express');
+var sleep = require('sleep');
 var fs = require('fs');
 var request = require('request');
 var sentiment = require('sentiment');
@@ -34,13 +35,13 @@ function scrape(clb){
     var baseuri = 'http://www.transfermarkt.co.uk/rumourmill/detail/forum/180/ajax/threadList';
     var pages = [];
 
-    Promise.resolve([1])
+    Promise.resolve([1,2,3])
     //Promise.resolve([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20])
         .each(function(page) {
             var uri = baseuri;
             uri += "/page/";
             uri += page;
-            sleep(2000);
+            sleep.sleep(2);
             console.dir(uri);
 
             var options = {
@@ -100,7 +101,7 @@ function scrape(clb){
                             links.splice(i,1);
                         }
                     }
-                    console.dir( $('.page.selected').text() + "  " + names[0]);
+                    //console.dir( $('.page.selected').text() + "  " + names[0]);
                     var resultPromises = doSentimentAnalysisForNames(names, toTeams, probs, links);
 
                     return Promise.all(resultPromises);
@@ -112,6 +113,7 @@ function scrape(clb){
         .then(function() {
             Promise.all(pages).then(function (pages) {
                 pages = Array.prototype.concat.apply([], pages);
+                console.log('crawled all pages');
                 if(clb)
                     clb(pages);
             });
@@ -119,33 +121,26 @@ function scrape(clb){
 }
 
 var doSentimentAnalysisForNames = function (names, toTeams, probs, links) {
-    console.log(names[0]);
+    //console.log(names[0]);
     var pSentimentAnalysis = Promise.promisify(sentimentAnalysis);
-    return names.map(function (name, i) {
+    var results =  names.map(function (name, i) {
         return pSentimentAnalysis(links[i])
             .then(function (res) {
                 var score = res[0], comparative = res[1];
-                console.log(name);
+                //console.log(name);
                 //console.log(toTeams[i]);
                 //console.log(probs[i]);
                 //console.log(links[i]);
                 //console.log('avg score '.concat(score));
                 //console.log('comparative '.concat(comparative));
                 //console.log("\n");
-                sleep(10);
+                sleep.sleep(1);
                 return [name, toTeams[i], probs[i], links[i], score, comparative];
             });
     });
+    console.log('finished crawling page');
+    return results;
 };
-
-function sleep(milliseconds) {
-    var start = new Date().getTime();
-    for (var i = 0; i < 1e7; i++) {
-        if ((new Date().getTime() - start) > milliseconds){
-            break;
-        }
-    }
-}
 
 function sentimentAnalysis(link, callback){
         var score = 0;
@@ -159,7 +154,10 @@ function sentimentAnalysis(link, callback){
         };
 
         request(options, function(error, response, html){
-            if(!error) {
+            if(error){
+                console.log('request error to: '+link);
+                console.log(error);
+            }else{
                 var $ = cheerio.load(html);
                 var lines = new Array();
                 var counter = 0;
@@ -181,14 +179,15 @@ function sentimentAnalysis(link, callback){
                         comparative += res.comparative;
                     }
                 }
-
-                score /= counter;
-                comparative /= counter;
-                callback(null, [score, comparative]);
+                if(counter>0){
+                    score /= counter;
+                    comparative /= counter;
+                }
             }
+            callback(null, [score, comparative]);
         })
 }
 
 //app.listen('8081');
-console.log('Magic happens on port 8081');
+//console.log('Magic happens on port 8081');
 exports = module.exports = scrape;
